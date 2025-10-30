@@ -1,0 +1,87 @@
+﻿@model LogiDriverPortal.Models.RoutePlan
+@using LogiDriverPortal.Models
+@{
+    ViewData["Title"] = "Create Route Plan";
+}
+
+<div class="create-route">
+    <div class="page-header">
+        <h2 class="page-title-main">Create New Route Plan</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Routes
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Create" method="post">
+            <div class="form-card">
+                <h3 class="form-section-title">
+                    <i class="fas fa-info-circle"></i> Route Information
+                </h3>
+
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label asp-for="RouteDescription" class="form-label">Route Description</label>
+                        <input asp-for="RouteDescription" class="form-control" placeholder="e.g., Johannesburg → Cape Town via N1" />
+                        <span asp-validation-for="RouteDescription" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="DriverId" class="form-label">Assign Driver</label>
+                        <select asp-for="DriverId" class="form-select">
+                            <option value="">-- Select Driver --</option>
+                            @foreach (var driver in ViewBag.Drivers as List<Driver>)
+                            {
+                                <option value="@driver.DriverId">
+                                    @driver.FullName (@driver.DriverCode) - Fatigue: @driver.FatigueLevel%
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="DriverId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="VehicleId" class="form-label">Assign Vehicle</label>
+                        <select asp-for="VehicleId" class="form-select">
+                            <option value="">-- Select Vehicle --</option>
+                            @foreach (var vehicle in ViewBag.Vehicles as List<Vehicle>)
+                            {
+                                <option value="@vehicle.VehicleId">
+                                    @vehicle.RegistrationNumber - @vehicle.MakeModel (@vehicle.Status)
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="VehicleId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EstimatedArrival" class="form-label">Estimated Arrival</label>
+                        <input asp-for="EstimatedArrival" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="EstimatedArrival" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Route Code</label>
+                        <input type="text" class="form-control" value="Auto-generated" readonly />
+                        <small class="text-muted">System will generate route code automatically</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Create Route Plan
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

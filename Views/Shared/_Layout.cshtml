@@ -29,14 +29,14 @@
                         <span>Overview</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#" onclick="alert('Route Planning - Coming Soon'); return false;">
+                <li class="menu-item" @(ViewContext.RouteData.Values["Action"]?.ToString() == "RoutePlanning" ? "active" : "")">
+                    <a asp-controller="RoutePlanning" asp-action="Index">
                         <i class="fas fa-route"></i>
                         <span>Route Planning</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#" onclick="alert('Live Tracking - Coming Soon'); return false;">
+                <li class="menu-item" @(ViewContext.RouteData.Values["Action"]?.ToString() == "RoutePlanning" ? "active" : "")">
+                    <a asp-controller="LiveTracking" asp-action="Index">
                         <i class="fas fa-map-marker-alt"></i>
                         <span>Live Tracking</span>
                     </a>

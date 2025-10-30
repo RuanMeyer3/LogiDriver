@@ -1,0 +1,167 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.RoutePlan>
+@{
+    ViewData["Title"] = "Route Planning";
+}
+
+<div class="route-planning">
+    <div class="page-header">
+        <h2 class="page-title-main">Route Planning</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Route
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs mb-4">
+        <button class="filter-tab active" data-filter="all">
+            All Routes <span class="badge">@Model.Count()</span>
+        </button>
+        <button class="filter-tab" data-filter="active">
+            Active <span class="badge badge-success">@Model.Count(r => r.Status == "Active")</span>
+        </button>
+        <button class="filter-tab" data-filter="completed">
+            Completed <span class="badge badge-secondary">@Model.Count(r => r.Status == "Completed")</span>
+        </button>
+        <button class="filter-tab" data-filter="cancelled">
+            Cancelled <span class="badge badge-danger">@Model.Count(r => r.Status == "Cancelled")</span>
+        </button>
+    </div>
+
+    <!-- Routes Grid -->
+    <div class="routes-grid">
+        @foreach (var route in Model)
+        {
+            <div class="route-plan-card" data-status="@route.Status.ToLower()">
+                <div class="route-card-header">
+                    <div class="route-code-badge">
+                        <i class="fas fa-route"></i>
+                        <strong>@route.RouteCode</strong>
+                    </div>
+                    <span class="badge badge-@(route.Status.ToLower() == "active" ? "success" : route.Status.ToLower() == "completed" ? "secondary" : "danger")">
+                        @route.Status
+                    </span>
+                </div>
+
+                <div class="route-card-body">
+                    <div class="route-description">
+                        <i class="fas fa-map-marked-alt text-primary"></i>
+                        <span>@route.RouteDescription</span>
+                    </div>
+
+                    <div class="route-details-grid">
+                        <div class="detail-item">
+                            <i class="fas fa-user"></i>
+                            <div>
+                                <small>Driver</small>
+                                <strong>@route.Driver.FullName</strong>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-truck"></i>
+                            <div>
+                                <small>Vehicle</small>
+                                <strong>@route.Vehicle.RegistrationNumber</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (route.Status == "Active")
+                    {
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span>Progress</span>
+                                <span class="progress-value">@route.Progress%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: @route.Progress%"></div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="route-times">
+                        <div class="time-item">
+                            <i class="fas fa-clock text-muted"></i>
+                            <span>Started: @route.StartTime.ToString("MMM dd, HH:mm")</span>
+                        </div>
+                        @if (route.EstimatedArrival.HasValue)
+                        {
+                            <div class="time-item">
+                                <i class="fas fa-flag-checkered text-success"></i>
+                                <span>ETA: @route.EstimatedArrival.Value.ToString("MMM dd, HH:mm")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="route-card-actions">
+                    @if (route.Status == "Active")
+                    {
+                        <a asp-controller="LiveTracking" asp-action="Details" asp-route-id="@route.RoutePlanId"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-map-marker-alt"></i> Track
+                        </a>
+                        <form asp-action="CompleteRoute" asp-route-id="@route.RoutePlanId" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i> Complete
+                            </button>
+                        </form>
+                    }
+                    <a asp-action="Edit" asp-route-id="@route.RoutePlanId" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@route.RoutePlanId" method="post"
+                          style="display: inline;"
+                          onsubmit="return confirm('Are you sure you want to delete this route?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-route"></i>
+            <h3>No Route Plans Yet</h3>
+            <p>Create your first route plan to get started</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Route Plan
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Filter routes by status
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const filter = this.dataset.filter;
+
+                // Update active tab
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter cards
+                document.querySelectorAll('.route-plan-card').forEach(card => {
+                    if (filter === 'all' || card.dataset.status === filter) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,172 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.RoutePlan>
+@{
+    ViewData["Title"] = "Live Vehicle Tracking";
+}
+
+<div class="live-tracking">
+    <div class="page-header">
+        <h2 class="page-title-main">Live Vehicle Tracking</h2>
+        <div>
+            <button class="btn btn-outline-primary" onclick="refreshTracking()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+        <div class="map-placeholder">
+            <div class="map-overlay">
+                <i class="fas fa-map-marked-alt"></i>
+                <h3>Real-time GPS Tracking</h3>
+                <p>Live vehicle locations across South Africa</p>
+                <small>📍 @Model.Count() Active Routes</small>
+            </div>
+            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=600&fit=crop"
+                 alt="Map" class="map-bg" />
+        </div>
+    </div>
+
+    <!-- Active Vehicles List -->
+    <div class="tracking-grid">
+        @foreach (var route in Model)
+        {
+            <div class="tracking-card">
+                <div class="tracking-card-header">
+                    <div class="vehicle-status">
+                        <div class="status-indicator status-active"></div>
+                        <strong>@route.Vehicle.RegistrationNumber</strong>
+                    </div>
+                    <span class="badge badge-success">
+                        <i class="fas fa-broadcast-tower"></i> Live
+                    </span>
+                </div>
+
+                <div class="tracking-card-body">
+                    <div class="tracking-info">
+                        <div class="info-row">
+                            <i class="fas fa-user"></i>
+                            <span>@route.Driver.FullName</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-route"></i>
+                            <span>@route.RouteCode - @route.RouteDescription</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>@(route.Driver.CurrentLocation ?? "Location updating...")</span>
+                        </div>
+                    </div>
+
+                    <div class="tracking-stats">
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-blue">
+                                <i class="fas fa-road"></i>
+                            </div>
+                            <div>
+                                <small>Progress</small>
+                                <strong>@route.Progress%</strong>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-green">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div>
+                                <small>Speed</small>
+                                <strong>85 km/h</strong>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-orange">
+                                <i class="fas fa-battery-three-quarters"></i>
+                            </div>
+                            <div>
+                                <small>Fatigue</small>
+                                <strong class="@(route.Driver.FatigueLevel > 70 ? "text-danger" : "")">
+                                    @route.Driver.FatigueLevel%
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-section mt-3">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: @route.Progress%"></div>
+                        </div>
+                    </div>
+
+                    @if (route.EstimatedArrival.HasValue)
+                    {
+                        <div class="eta-info">
+                            <i class="fas fa-clock"></i>
+                            ETA: @route.EstimatedArrival.Value.ToString("MMM dd, HH:mm")
+                            (@((route.EstimatedArrival.Value - DateTime.UtcNow).Hours)h remaining)
+                        </div>
+                    }
+                </div>
+
+                <div class="tracking-card-actions">
+                    <a asp-action="Details" asp-route-id="@route.RoutePlanId" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <button class="btn btn-sm btn-outline-primary" onclick="centerOnVehicle('@route.Vehicle.RegistrationNumber')">
+                        <i class="fas fa-crosshairs"></i> Locate
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-map-marker-alt"></i>
+            <h3>No Active Routes</h3>
+            <p>No vehicles are currently being tracked</p>
+            <a asp-controller="RoutePlanning" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-route"></i> View All Routes
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh tracking data every 10 seconds
+        let refreshInterval;
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                refreshTracking();
+            }, 10000); // 10 seconds
+        }
+
+        function refreshTracking() {
+            console.log('Refreshing tracking data...');
+            // In production, use AJAX to update data without page reload
+            // For now, we'll just show a message
+            const btn = document.querySelector('.btn-outline-primary');
+            const icon = btn.querySelector('i');
+            icon.classList.add('fa-spin');
+
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                // location.reload(); // Uncomment for actual refresh
+            }, 1000);
+        }
+
+        function centerOnVehicle(vehicleReg) {
+            alert(`Centering map on vehicle: ${vehicleReg}`);
+            // In production, this would center the map on the selected vehicle
+        }
+
+        // Start auto-refresh when page loads
+        startAutoRefresh();
+
+        // Clean up interval when leaving page
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+        });
+    </script>
+}
