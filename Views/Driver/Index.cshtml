@@ -1,0 +1,76 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.Driver>
+@{
+    ViewData["Title"] = "Driver Management";
+}
+
+<div class="driver-management">
+    <div class="page-header">
+        <h2 class="page-title-main">Driver Management</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Driver
+        </a>
+    </div>
+
+    <div class="drivers-grid">
+        @foreach (var driver in Model)
+        {
+            <div class="driver-card">
+                <div class="driver-header">
+                    <div class="driver-avatar">
+                        @driver.FullName.Substring(0, Math.Min(2, driver.FullName.Length)).ToUpper()
+                    </div>
+                    <div class="driver-info-header">
+                        <h3 class="driver-name">@driver.FullName</h3>
+                        <p class="driver-code">@driver.DriverCode</p>
+                    </div>
+                    <span class="badge badge-@(driver.Status.ToLower() == "active" ? "success" : driver.Status.ToLower() == "on break" ? "warning" : "secondary")">
+                        @driver.Status
+                    </span>
+                </div>
+
+                <div class="driver-details">
+                    <div class="detail-row">
+                        <i class="fas fa-phone"></i>
+                        <span>Phone: @driver.Phone</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(driver.AssignedVehicle))
+                    {
+                        <div class="detail-row">
+                            <i class="fas fa-car"></i>
+                            <span>@driver.AssignedVehicle</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(driver.CurrentLocation))
+                    {
+                        <div class="detail-row">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>@driver.CurrentLocation</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="fatigue-section">
+                    <div class="fatigue-header">
+                        <span>Fatigue Level</span>
+                        <span class="fatigue-value @(driver.FatigueLevel > 70 ? "text-danger" : driver.FatigueLevel > 50 ? "text-warning" : "text-success")">
+                            @driver.FatigueLevel%
+                        </span>
+                    </div>
+                    <div class="fatigue-bar-container">
+                        <div class="fatigue-bar fatigue-@(driver.FatigueLevel > 70 ? "high" : driver.FatigueLevel > 50 ? "medium" : "low")" 
+                             style="width: @driver.FatigueLevel%"></div>
+                    </div>
+                    @if (driver.LastAlertTime.HasValue)
+                    {
+                        <p class="last-alert">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            Last alert: @((DateTime.UtcNow - driver.LastAlertTime.Value).TotalHours < 1 ? 
+                                $"{(int)(DateTime.UtcNow - driver.LastAlertTime.Value).TotalMinutes}m ago" : 
+                                $"{(int)(DateTime.UtcNow - driver.LastAlertTime.Value).TotalHours}h ago")
+                        </p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

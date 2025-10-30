@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="reports-page">
+    <h2 class="page-title-main">Operational Reports</h2>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="report-card">
+                <div class="report-icon report-icon-blue">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="report-content">
+                    <h3>@ViewBag.CompletedRoutes</h3>
+                    <p>Completed Routes</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="report-card">
+                <div class="report-icon report-icon-green">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="report-content">
+                    <h3>@ViewBag.ActiveDrivers / @ViewBag.TotalDrivers</h3>
+                    <p>Active / Total Drivers</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="report-card">
+                <div class="report-icon report-icon-purple">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="report-content">
+                    <h3>@ViewBag.AvailableVehicles / @ViewBag.TotalVehicles</h3>
+                    <p>Available / Total Vehicles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card mt-4">
+        <h3>Export Reports</h3>
+        <button class="btn btn-primary me-2">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button class="btn btn-outline-primary">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+    </div>
+</div>

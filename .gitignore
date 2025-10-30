@@ -1,0 +1,22 @@
+# Visual Studio 2015/2017/2019/2022
+.vs/
+*.suo
+*.user
+*.sln.docstates
+
+# Build Results
+[Dd]ebug/
+[Rr]elease/
+*.exe
+*.dll
+*.pdb
+*.obj
+
+# NuGet
+# packages/ (If using packages.config)
+
+# Rider
+.idea/
+
+# Windows
+Thumbs.db

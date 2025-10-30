@@ -1,0 +1,153 @@
+﻿@model LogiDriverPortal.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Supervisor Dashboard";
+}
+
+<div class="dashboard">
+    <p class="subtitle">Welcome back, manage your logistics operations</p>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card stat-card-blue">
+                <div class="stat-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">@Model.ActiveRoutes</div>
+                    <div class="stat-label">Active Routes</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> 8% from yesterday
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card stat-card-green">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">@Model.ActiveDrivers</div>
+                    <div class="stat-label">Active Drivers</div>
+                    <div class="stat-change">4 available</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card stat-card-red">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">@Model.ActiveAlerts</div>
+                    <div class="stat-label">Active Alerts</div>
+                    <div class="stat-change critical">1 critical</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card stat-card-purple">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">@Model.OnTimeRate%</div>
+                    <div class="stat-label">On-Time Rate</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> 3% improvement
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Alerts Section -->
+    <div class="section-card mb-4">
+        <h3 class="section-title">Critical Alerts</h3>
+        <div class="alerts-container">
+            @if (Model.CriticalAlerts != null && Model.CriticalAlerts.Any())
+            {
+                @foreach (var alert in Model.CriticalAlerts)
+                {
+                    <div class="alert-item alert-critical">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">
+                                @(alert.Severity.ToUpper() == "CRITICAL" ? "PANIC" : "FATIGUE") - @alert.RoutePlan.Driver.FullName
+                            </div>
+                            <div class="alert-details">
+                                @alert.Location • @((DateTime.UtcNow - alert.OccurredAt).TotalMinutes < 60 ?
+                                $"{(int)(DateTime.UtcNow - alert.OccurredAt).TotalMinutes} minutes ago" :
+                                                $"{(int)(DateTime.UtcNow - alert.OccurredAt).TotalHours} hours ago")
+                    </div>
+                </div>
+                <form asp-controller="Alerts" asp-action="RespondToPanic" asp-route-id="@alert.PanicEventId" method="post">
+                    <button type="submit" class="btn btn-respond">Respond</button>
+                </form>
+            </div>
+                        }
+            }
+            else
+            {
+                <p class="text-muted">No critical alerts at this time</p>
+            }
+        </div>
+    </div>
+
+    <!-- Active Routes Table -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3 class="section-title">Active Routes</h3>
+            <a href="#" class="view-all-link">View All</a>
+        </div>
+        <div class="table-responsive">
+            <table class="routes-table">
+                <thead>
+                    <tr>
+                        <th>ROUTE ID</th>
+                        <th>DRIVER</th>
+                        <th>ROUTE</th>
+                        <th>PROGRESS</th>
+                        <th>STATUS</th>
+                        <th>ETA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ActiveRoutesList != null && Model.ActiveRoutesList.Any())
+                    {
+                        @foreach (var route in Model.ActiveRoutesList)
+                        {
+                            <tr>
+                                <td><strong>@route.RouteCode</strong></td>
+                                <td>@route.Driver.FullName</td>
+                                <td>@route.RouteDescription</td>
+                                <td>
+                                    <div class="progress-container">
+                                        <div class="progress-bar" style="width: @route.Progress%"></div>
+                                    </div>
+                                    <span class="progress-text">@route.Progress%</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-success">@route.Status</span>
+                                </td>
+                                <td>@(route.EstimatedArrival?.ToString("HH:mm") ?? "N/A")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">No active routes</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,67 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.Vehicle>
+@{
+    ViewData["Title"] = "Fleet Management";
+}
+
+<div class="fleet-management">
+    <div class="page-header">
+        <h2 class="page-title-main">Fleet Management</h2>
+        <div>
+            <button class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar"></i> Schedule Maintenance
+            </button>
+            <button class="btn btn-primary">
+                <i class="fas fa-truck"></i> Assign Vehicle
+            </button>
+        </div>
+    </div>
+
+    <div class="fleet-grid">
+        @foreach (var vehicle in Model)
+        {
+            <div class="vehicle-card">
+                <div class="vehicle-header">
+                    <div class="vehicle-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="vehicle-main-info">
+                        <h3 class="vehicle-registration">@vehicle.RegistrationNumber</h3>
+                        <p class="vehicle-model">@vehicle.MakeModel</p>
+                    </div>
+                    <span class="badge badge-@(vehicle.Status.ToLower() == "in-transit" ? "primary" : vehicle.Status.ToLower() == "available" ? "success" : "warning")">
+                        @vehicle.Status
+                    </span>
+                </div>
+
+                <div class="vehicle-details">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Year</span>
+                            <span class="detail-value">@vehicle.Year</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mileage</span>
+                            <span class="detail-value">@vehicle.Mileage.ToString("N0") km</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-row mt-3">
+                        <i class="fas fa-user"></i>
+                        <span>Driver: @(vehicle.AssignedDriver ?? "Unassigned")</span>
+                    </div>
+
+                    <div class="service-info">
+                        <div class="service-row">
+                            <span>Last Service:</span>
+                            <strong>@(vehicle.LastService?.ToString("yyyy-MM-dd") ?? "N/A")</strong>
+                        </div>
+                        <div class="service-row">
+                            <span>Next Service:</span>
+                            <strong>@(vehicle.NextService?.ToString("yyyy-MM-dd") ?? "Not scheduled")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

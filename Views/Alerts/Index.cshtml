@@ -1,0 +1,60 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.PanicEvent>
+@{
+    ViewData["Title"] = "Alerts & Safety";
+    var deviationAlerts = ViewBag.DeviationAlerts as IEnumerable<LogiDriverPortal.Models.DeviationAlert>;
+}
+
+<div class="alerts-page">
+    <h2 class="page-title-main">Recent Alerts</h2>
+
+    <div class="alerts-list">
+        @foreach (var alert in Model)
+        {
+            <div class="alert-card alert-card-panic">
+                <div class="alert-card-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="alert-card-content">
+                    <h4 class="alert-card-title">Panic Alert</h4>
+                    <p class="alert-card-driver">Driver: @alert.RoutePlan.Driver.FullName</p>
+                    <p class="alert-card-vehicle">Vehicle: @alert.RoutePlan.Vehicle.RegistrationNumber</p>
+                    <p class="alert-card-location">Location: @alert.Location</p>
+                    <p class="alert-card-time">@alert.OccurredAt.ToString("g")</p>
+                </div>
+                <div class="alert-card-actions">
+                    <span class="badge badge-@(alert.Status.ToLower())">@alert.Status</span>
+                    @if (alert.Status.ToLower() == "active")
+                    {
+                        <form asp-controller="Alerts" asp-action="RespondToPanic" asp-route-id="@alert.PanicEventId" method="post">
+                            <button type="submit" class="btn btn-primary btn-sm mt-2">
+                                <i class="fas fa-hand-paper"></i> Take Action
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (deviationAlerts != null)
+        {
+            @foreach (var alert in deviationAlerts)
+            {
+                <div class="alert-card alert-card-deviation">
+                    <div class="alert-card-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="alert-card-content">
+                        <h4 class="alert-card-title">Deviation Alert</h4>
+                        <p class="alert-card-driver">Driver: @alert.RoutePlan.Driver.FullName</p>
+                        <p class="alert-card-vehicle">Vehicle: @alert.RoutePlan.Vehicle.RegistrationNumber</p>
+                        <p class="alert-card-location">Location: @alert.Location</p>
+                        <p class="alert-card-time">@alert.DetectedAt.ToString("g")</p>
+                    </div>
+                    <div class="alert-card-actions">
+                        <span class="badge badge-warning">@alert.Status</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
