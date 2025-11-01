@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LogiDriverPortal.Data;
+using System.Text;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace LogiDriverPortal.Controllers
 {
@@ -34,6 +37,35 @@ namespace LogiDriverPortal.Controllers
             ViewBag.AvailableVehicles = availableVehicles;
 
             return View();
+        }
+
+        public async Task<IActionResult> ExportCsv()
+        {
+            var drivers = await _context.Drivers.ToListAsync();
+            var builder = new StringBuilder();
+            builder.AppendLine("DriverId,FullName,DriverCode,Phone,Status,AssignedVehicle");
+
+            foreach (var driver in drivers)
+            {
+                builder.AppendLine($"{driver.DriverId},{driver.FullName},{driver.DriverCode},{driver.Phone},{driver.Status},{driver.AssignedVehicle}");
+            }
+
+            return File(Encoding.UTF8.GetBytes(builder.ToString()), "text/csv", "drivers.csv");
+        }
+
+        public IActionResult ExportPdf()
+        {
+            // In a real application, you would use a PDF generation library (e.g., iTextSharp, QuestPDF)
+            // to create a professional PDF report from your data.
+            // For now, this is a mock implementation that returns a plain text file.
+
+            var content = "Mock PDF Report\n\nThis is a placeholder for a PDF report. " +
+                          "Please integrate a PDF generation library for actual PDF export functionality.";
+
+            var fileName = "report.pdf";
+            var contentType = "application/pdf"; // Correct content type for PDF
+
+            return File(Encoding.UTF8.GetBytes(content), contentType, fileName);
         }
     }
 }

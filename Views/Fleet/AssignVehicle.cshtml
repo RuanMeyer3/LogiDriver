@@ -1,0 +1,28 @@
+@model LogiDriverPortal.Models.ViewModels.AssignVehicleViewModel
+
+@{
+    ViewData["Title"] = "Assign Vehicle";
+}
+
+<h2>Assign Vehicle</h2>
+
+<form asp-action="AssignVehicle">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="VehicleId" class="control-label">Vehicle</label>
+        <select asp-for="VehicleId" class="form-control" asp-items="Model.Vehicles"></select>
+        <span asp-validation-for="VehicleId" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="DriverId" class="control-label">Driver</label>
+        <select asp-for="DriverId" class="form-control" asp-items="Model.Drivers"></select>
+        <span asp-validation-for="DriverId" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Assign" class="btn btn-primary" />
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

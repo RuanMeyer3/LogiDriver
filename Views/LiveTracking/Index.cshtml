@@ -133,7 +133,6 @@
 
 @section Scripts {
     <script>
-        // Auto-refresh tracking data every 10 seconds
         let refreshInterval;
 
         function startAutoRefresh() {
@@ -142,29 +141,143 @@
             }, 10000); // 10 seconds
         }
 
-        function refreshTracking() {
+        async function refreshTracking() {
             console.log('Refreshing tracking data...');
-            // In production, use AJAX to update data without page reload
-            // For now, we'll just show a message
             const btn = document.querySelector('.btn-outline-primary');
             const icon = btn.querySelector('i');
             icon.classList.add('fa-spin');
 
-            setTimeout(() => {
+            try {
+                const response = await fetch('/LiveTracking/GetAllRouteStatuses');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                const trackingGrid = document.querySelector('.tracking-grid');
+                trackingGrid.innerHTML = ''; // Clear existing cards
+
+                const activeRoutesCount = document.querySelector('.map-overlay small');
+                activeRoutesCount.textContent = `📍 ${data.length} Active Routes`;
+
+                if (data.length === 0) {
+                    trackingGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <h3>No Active Routes</h3>
+                            <p>No vehicles are currently being tracked</p>
+                            <a href="/RoutePlanning/Index" class="btn btn-primary">
+                                <i class="fas fa-route"></i> View All Routes
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    data.forEach(route => {
+                        const fatigueClass = route.fatigueLevel > 70 ? "text-danger" : "";
+                        const etaInfo = route.eta ? `
+                            <div class="eta-info">
+                                <i class="fas fa-clock"></i>
+                                ETA: ${route.eta}
+                            </div>
+                        ` : '';
+
+                        const cardHtml = `
+                            <div class="tracking-card">
+                                <div class="tracking-card-header">
+                                    <div class="vehicle-status">
+                                        <div class="status-indicator status-active"></div>
+                                        <strong>${route.vehicleReg}</strong>
+                                    </div>
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-broadcast-tower"></i> Live
+                                    </span>
+                                </div>
+
+                                <div class="tracking-card-body">
+                                    <div class="tracking-info">
+                                        <div class="info-row">
+                                            <i class="fas fa-user"></i>
+                                            <span>${route.driverName}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <i class="fas fa-route"></i>
+                                            <span>${route.routeCode} - ${route.routeDescription}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span>${route.currentLocation}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="tracking-stats">
+                                        <div class="stat-box">
+                                            <div class="stat-icon stat-icon-blue">
+                                                <i class="fas fa-road"></i>
+                                            </div>
+                                            <div>
+                                                <small>Progress</small>
+                                                <strong>${route.progress}%</strong>
+                                            </div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-icon stat-icon-green">
+                                                <i class="fas fa-tachometer-alt"></i>
+                                            </div>
+                                            <div>
+                                                <small>Speed</small>
+                                                <strong>85 km/h</strong>
+                                            </div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-icon stat-icon-orange">
+                                                <i class="fas fa-battery-three-quarters"></i>
+                                            </div>
+                                            <div>
+                                                <small>Fatigue</small>
+                                                <strong class="${fatigueClass}">
+                                                    ${route.fatigueLevel}%
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress-section mt-3">
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" style="width: ${route.progress}%"></div>
+                                        </div>
+                                    </div>
+
+                                    ${etaInfo}
+                                </div>
+
+                                <div class="tracking-card-actions">
+                                    <a href="/LiveTracking/Details/${route.routePlanId}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="centerOnVehicle('${route.vehicleReg}', '${route.currentLocation}')">
+                                        <i class="fas fa-crosshairs"></i> Locate
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        trackingGrid.insertAdjacentHTML('beforeend', cardHtml);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error refreshing tracking data:', error);
+            } finally {
                 icon.classList.remove('fa-spin');
-                // location.reload(); // Uncomment for actual refresh
-            }, 1000);
+            }
         }
 
-        function centerOnVehicle(vehicleReg) {
-            alert(`Centering map on vehicle: ${vehicleReg}`);
-            // In production, this would center the map on the selected vehicle
+        function centerOnVehicle(vehicleReg, location) {
+            alert(`Centering map on vehicle: ${vehicleReg} at ${location}`);
+            // In production, this would interact with a mapping library
         }
 
-        // Start auto-refresh when page loads
         startAutoRefresh();
 
-        // Clean up interval when leaving page
         window.addEventListener('beforeunload', () => {
             clearInterval(refreshInterval);
         });

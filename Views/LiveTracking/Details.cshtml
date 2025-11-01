@@ -1,0 +1,123 @@
+@model LogiDriverPortal.Models.RoutePlan
+@{
+    ViewData["Title"] = "Route Details";
+}
+
+<div class="route-details-page">
+    <h2 class="page-title-main">Route Details: @Model.RouteCode</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Route Information</div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Route Code:</dt>
+                        <dd class="col-sm-8">@Model.RouteCode</dd>
+
+                        <dt class="col-sm-4">Description:</dt>
+                        <dd class="col-sm-8">@Model.RouteDescription</dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">@Model.Status</dd>
+
+                        <dt class="col-sm-4">Progress:</dt>
+                        <dd class="col-sm-8">@Model.Progress%</dd>
+
+                        <dt class="col-sm-4">Estimated Arrival:</dt>
+                        <dd class="col-sm-8">@(Model.EstimatedArrival?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Driver Information</div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">@Model.Driver.FullName</dd>
+
+                        <dt class="col-sm-4">Code:</dt>
+                        <dd class="col-sm-8">@Model.Driver.DriverCode</dd>
+
+                        <dt class="col-sm-4">Phone:</dt>
+                        <dd class="col-sm-8">@Model.Driver.Phone</dd>
+
+                        <dt class="col-sm-4">Current Location:</dt>
+                        <dd class="col-sm-8">@(Model.Driver.CurrentLocation ?? "N/A")</dd>
+
+                        <dt class="col-sm-4">Fatigue Level:</dt>
+                        <dd class="col-sm-8">@Model.Driver.FatigueLevel%</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Vehicle Information</div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Registration:</dt>
+                        <dd class="col-sm-8">@Model.Vehicle.RegistrationNumber</dd>
+
+                        <dt class="col-sm-4">Make/Model:</dt>
+                        <dd class="col-sm-8">@Model.Vehicle.MakeModel</dd>
+
+                        <dt class="col-sm-4">Year:</dt>
+                        <dd class="col-sm-8">@Model.Vehicle.Year</dd>
+
+                        <dt class="col-sm-4">Mileage:</dt>
+                        <dd class="col-sm-8">@Model.Vehicle.Mileage.ToString("N0") km</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Panic Events</div>
+                <div class="card-body">
+                    @if (ViewBag.PanicEvents != null && ViewBag.PanicEvents.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var panic in ViewBag.PanicEvents)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@panic.OccurredAt.ToString("yyyy-MM-dd HH:mm")</strong>: @panic.Location
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No panic events for this route.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Deviation Alerts</div>
+                <div class="card-body">
+                    @if (ViewBag.DeviationAlerts != null && ViewBag.DeviationAlerts.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var deviation in ViewBag.DeviationAlerts)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@deviation.DetectedAt.ToString("yyyy-MM-dd HH:mm")</strong>: @deviation.Reason - @deviation.Location
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No deviation alerts for this route.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-secondary">Back to Live Tracking</a>
+    </div>
+</div>

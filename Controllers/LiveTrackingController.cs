@@ -86,5 +86,32 @@ namespace LogiDriverPortal.Controllers
                 currentLocation = route.Driver.CurrentLocation ?? "Unknown"
             });
         }
+
+        // GET: /LiveTracking/GetAllRouteStatuses
+        [HttpGet]
+        public async Task<IActionResult> GetAllRouteStatuses()
+        {
+            var activeRoutes = await _context.RoutePlans
+                .Include(r => r.Driver)
+                .Include(r => r.Vehicle)
+                .Where(r => r.Status == "Active")
+                .OrderBy(r => r.RouteCode)
+                .Select(r => new
+                {
+                    routePlanId = r.RoutePlanId,
+                    routeCode = r.RouteCode,
+                    progress = r.Progress,
+                    status = r.Status,
+                    driverName = r.Driver.FullName,
+                    fatigueLevel = r.Driver.FatigueLevel,
+                    vehicleReg = r.Vehicle.RegistrationNumber,
+                    eta = r.EstimatedArrival.HasValue ? r.EstimatedArrival.Value.ToString("HH:mm") : null,
+                    currentLocation = r.Driver.CurrentLocation ?? "Unknown",
+                    routeDescription = r.RouteDescription
+                })
+                .ToListAsync();
+
+            return Json(activeRoutes);
+        }
     }
 }

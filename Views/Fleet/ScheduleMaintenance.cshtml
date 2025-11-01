@@ -1,0 +1,28 @@
+@model LogiDriverPortal.Models.ViewModels.ScheduleMaintenanceViewModel
+
+@{
+    ViewData["Title"] = "Schedule Maintenance";
+}
+
+<h2>Schedule Maintenance</h2>
+
+<form asp-action="ScheduleMaintenance">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="VehicleId" class="control-label">Vehicle</label>
+        <select asp-for="VehicleId" class="form-control" asp-items="Model.Vehicles"></select>
+        <span asp-validation-for="VehicleId" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="NextService" class="control-label"></label>
+        <input asp-for="NextService" class="form-control" />
+        <span asp-validation-for="NextService" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Schedule" class="btn btn-primary" />
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

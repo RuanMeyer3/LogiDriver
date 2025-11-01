@@ -7,12 +7,15 @@
     <div class="page-header">
         <h2 class="page-title-main">Fleet Management</h2>
         <div>
-            <button class="btn btn-outline-primary me-2">
-                <i class="fas fa-calendar"></i> Schedule Maintenance
-            </button>
-            <button class="btn btn-primary">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Vehicle
+            </a>
+            <a asp-action="AssignVehicle" class="btn btn-primary">
                 <i class="fas fa-truck"></i> Assign Vehicle
-            </button>
+            </a>
+            <a asp-action="ScheduleMaintenance" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar"></i> Schedule Maintenance
+            </a>
         </div>
     </div>
 
