@@ -1,6 +1,3 @@
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "server=localhost;port=3306;database=logidriver_db;user=root;password=5f4d030606;"
-  }
+"ConnectionStrings": {
+  "DefaultConnection": "server=DB_HOST;port=3306;database=logidriver_db;user=DB_USER;password=DB_PASS;"
 }
-
