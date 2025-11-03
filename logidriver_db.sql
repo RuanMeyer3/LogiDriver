@@ -156,8 +156,8 @@ CREATE TABLE gps_points (
 
 INSERT INTO aspnetusers (Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, FullName, Role)
 VALUES 
-(UUID(), 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'AQAAAAIAAYagAAAAEBmQ7z2Uixn8kPz5K6frXWJbFS34AzM6EV27lqFZshE72OyAaH5wR3R6Q3fDkQvQ==', 'Reinhardt Haensel', 'Supervisor'),
-(UUID(), 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'Password1==', 'Raees', 'Supervisor'),
+(UUID(), 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'Password1!', 'Reinhardt', 'Supervisor'),
+(UUID(), 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'Password1', 'Raees', 'Supervisor'),
 (UUID(), 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'Password1!', 'Rickus', 'Supervisor'),
 (UUID(), 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'Password1!', 'Rishab', 'Supervisor'),
 (UUID(), 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'Password1!', 'Robert', 'Supervisor'),
