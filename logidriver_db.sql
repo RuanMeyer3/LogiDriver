@@ -2,8 +2,9 @@
 -- DATABASE INITIALIZATION
 -- ========================================
 
-CREATE DATABASE IF NOT EXISTS logidriver_db
-CHARACTER SET utf8mb4
+DROP DATABASE IF EXISTS logidriver_db;
+CREATE DATABASE logidriver_db 
+CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
 USE logidriver_db;
@@ -18,7 +19,7 @@ CREATE TABLE aspnetusers (
     NormalizedUserName VARCHAR(256),
     Email VARCHAR(256),
     NormalizedEmail VARCHAR(256),
-    EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0,
+    EmailConfirmed TINYINT(1) NOT NULL DEFAULT 1,
     PasswordHash LONGTEXT,
     SecurityStamp LONGTEXT,
     ConcurrencyStamp LONGTEXT,
@@ -52,42 +53,8 @@ CREATE TABLE aspnetuserroles (
     FOREIGN KEY (RoleId) REFERENCES aspnetroles(Id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE aspnetuserclaims (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    UserId VARCHAR(255) NOT NULL,
-    ClaimType LONGTEXT,
-    ClaimValue LONGTEXT,
-    FOREIGN KEY (UserId) REFERENCES aspnetusers(Id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE aspnetroleclaims (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    RoleId VARCHAR(255) NOT NULL,
-    ClaimType LONGTEXT,
-    ClaimValue LONGTEXT,
-    FOREIGN KEY (RoleId) REFERENCES aspnetroles(Id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE aspnetuserlogins (
-    LoginProvider VARCHAR(128) NOT NULL,
-    ProviderKey VARCHAR(128) NOT NULL,
-    ProviderDisplayName LONGTEXT,
-    UserId VARCHAR(255) NOT NULL,
-    PRIMARY KEY (LoginProvider, ProviderKey),
-    FOREIGN KEY (UserId) REFERENCES aspnetusers(Id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE aspnetusertokens (
-    UserId VARCHAR(255) NOT NULL,
-    LoginProvider VARCHAR(128) NOT NULL,
-    Name VARCHAR(128) NOT NULL,
-    Value LONGTEXT,
-    PRIMARY KEY (UserId, LoginProvider, Name),
-    FOREIGN KEY (UserId) REFERENCES aspnetusers(Id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- ========================================
--- CORE BUSINESS TABLES (from Project Phases 2–4)
+-- APPLICATION TABLES
 -- ========================================
 
 CREATE TABLE drivers (
@@ -100,9 +67,7 @@ CREATE TABLE drivers (
     AssignedVehicle VARCHAR(20),
     CurrentLocation VARCHAR(255),
     LastAlertTime DATETIME(6),
-    CreatedAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX IX_Drivers_Status (Status),
-    INDEX IX_Drivers_Code (DriverCode)
+    CreatedAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB;
 
 CREATE TABLE vehicles (
@@ -115,8 +80,7 @@ CREATE TABLE vehicles (
     Status VARCHAR(20) DEFAULT 'Available',
     LastService DATE,
     NextService DATE,
-    CreatedAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX IX_Vehicles_Status (Status)
+    CreatedAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB;
 
 CREATE TABLE routeplans (
@@ -135,6 +99,17 @@ CREATE TABLE routeplans (
     FOREIGN KEY (VehicleId) REFERENCES vehicles(VehicleId)
 ) ENGINE=InnoDB;
 
+CREATE TABLE panicevents (
+    PanicEventId INT AUTO_INCREMENT PRIMARY KEY,
+    RoutePlanId INT NOT NULL,
+    OccurredAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    Severity ENUM('Low','Medium','High','Critical') DEFAULT 'Critical',
+    Location VARCHAR(255),
+    Status VARCHAR(20) DEFAULT 'Active',
+    ResponseTime DATETIME(6),
+    FOREIGN KEY (RoutePlanId) REFERENCES routeplans(RoutePlanId)
+) ENGINE=InnoDB;
+
 CREATE TABLE deviationalerts (
     DeviationAlertId INT AUTO_INCREMENT PRIMARY KEY,
     RoutePlanId INT NOT NULL,
@@ -144,17 +119,6 @@ CREATE TABLE deviationalerts (
     Severity ENUM('Low','Medium','High') DEFAULT 'Medium',
     Status VARCHAR(20) DEFAULT 'Investigating',
     ResolvedAt DATETIME(6),
-    FOREIGN KEY (RoutePlanId) REFERENCES routeplans(RoutePlanId)
-) ENGINE=InnoDB;
-
-CREATE TABLE panicevents (
-    PanicEventId INT AUTO_INCREMENT PRIMARY KEY,
-    RoutePlanId INT NOT NULL,
-    OccurredAt DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
-    Severity ENUM('Low','Medium','High','Critical') DEFAULT 'Critical',
-    Location VARCHAR(255),
-    Status VARCHAR(20) DEFAULT 'Active',
-    ResponseTime DATETIME(6),
     FOREIGN KEY (RoutePlanId) REFERENCES routeplans(RoutePlanId)
 ) ENGINE=InnoDB;
 
@@ -173,91 +137,75 @@ CREATE TABLE gps_points (
 ) ENGINE=InnoDB;
 
 -- ========================================
--- REPORTING VIEWS
+-- ADD SUPERVISOR USERS (WITH PASSWORDS)
 -- ========================================
 
-CREATE OR REPLACE VIEW vw_active_routes AS
-SELECT rp.RouteCode, rp.RouteDescription, rp.Progress, rp.Status,
-       rp.EstimatedArrival, d.FullName AS DriverName, v.RegistrationNumber
-FROM routeplans rp
-JOIN drivers d ON rp.DriverId = d.DriverId
-JOIN vehicles v ON rp.VehicleId = v.VehicleId
-WHERE rp.Status = 'Active';
+-- Note: Password hashes are placeholders — replace if integrating with Identity.
+-- Hash corresponds to "Password123!" (ASP.NET Identity v3 default hash style)
 
-CREATE OR REPLACE VIEW vw_alert_summary AS
-SELECT 'Panic' AS AlertType, pe.PanicEventId AS AlertId,
-       pe.Severity, pe.Location, pe.Status, pe.OccurredAt, rp.RouteCode,
-       d.FullName AS DriverName
-FROM panicevents pe
-JOIN routeplans rp ON pe.RoutePlanId = rp.RoutePlanId
-JOIN drivers d ON rp.DriverId = d.DriverId
-UNION ALL
-SELECT 'Deviation', da.DeviationAlertId, da.Severity,
-       da.Location, da.Status, da.DetectedAt, rp.RouteCode, d.FullName
-FROM deviationalerts da
-JOIN routeplans rp ON da.RoutePlanId = rp.RoutePlanId
-JOIN drivers d ON rp.DriverId = d.DriverId
-ORDER BY OccurredAt DESC;
+INSERT INTO aspnetusers (Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, FullName, Role)
+VALUES 
+(UUID(), 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'AQAAAAIAAYagAAAAEBmQ7z2Uixn8kPz5K6frXWJbFS34AzM6EV27lqFZshE72OyAaH5wR3R6Q3fDkQvQ==', 'Reinhardt Haensel', 'Supervisor'),
+(UUID(), 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'Password1==', 'Raees', 'Supervisor'),
+(UUID(), 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'Password1', 'Rickus', 'Supervisor'),
+(UUID(), 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'Password1', 'Rishab', 'Supervisor'),
+(UUID(), 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'Password1', 'Robert', 'Supervisor'),
+(UUID(), 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'Password1', 'Ruan', 'Supervisor');
 
 -- ========================================
--- STORED PROCEDURES
+-- ADD 20 SAMPLE DRIVERS
 -- ========================================
 
-DELIMITER //
-
-CREATE PROCEDURE sp_update_route_progress(IN p_route_id INT, IN p_progress INT)
-BEGIN
-    UPDATE routeplans
-    SET Progress = p_progress,
-        Status = CASE WHEN p_progress >= 100 THEN 'Completed' ELSE Status END,
-        EndTime = CASE WHEN p_progress >= 100 THEN NOW() ELSE EndTime END
-    WHERE RoutePlanId = p_route_id;
-END //
-
-CREATE PROCEDURE sp_respond_to_panic(IN p_panic_id INT)
-BEGIN
-    UPDATE panicevents
-    SET Status = 'Responded', ResponseTime = NOW()
-    WHERE PanicEventId = p_panic_id;
-END //
-
-CREATE PROCEDURE sp_get_dashboard_stats()
-BEGIN
-    SELECT
-        (SELECT COUNT(*) FROM routeplans WHERE Status='Active') AS ActiveRoutes,
-        (SELECT COUNT(*) FROM drivers WHERE Status='Active') AS ActiveDrivers,
-        (SELECT COUNT(*) FROM panicevents WHERE Status='Active') +
-        (SELECT COUNT(*) FROM deviationalerts WHERE Status='Investigating') AS ActiveAlerts;
-END //
-
-DELIMITER ;
-
--- ========================================
--- SAMPLE DATA
--- ========================================
-
-INSERT INTO aspnetusers (Id, UserName, NormalizedUserName, Email, NormalizedEmail, EmailConfirmed, FullName, Role, Status)
-VALUES (UUID(), 'supervisor@logidriver.com', 'SUPERVISOR@LOGIDRIVER.COM', 'supervisor@logidriver.com', 'SUPERVISOR@LOGIDRIVER.COM', 1, 'System Supervisor', 'Supervisor', 'Active');
-
-INSERT INTO drivers (FullName, DriverCode, Phone, FatigueLevel, Status)
+INSERT INTO drivers (FullName, DriverCode, Phone, FatigueLevel, Status, AssignedVehicle, CurrentLocation)
 VALUES
-('Thabo Mthembu','DRV001','+27 82 345 6789',30,'Active'),
-('Sarah van der Merwe','DRV002','+27 83 456 7890',45,'Active');
+('Thabo Mthembu', 'DRV001', '+27 82 111 1111', 35, 'Active', 'VH-001', 'JHB-PTA-001'),
+('Sarah van der Merwe', 'DRV002', '+27 83 222 2222', 42, 'Active', 'VH-002', 'JHB-DBN-001'),
+('Lerato Ndlovu', 'DRV003', '+27 84 333 3333', 50, 'Active', 'VH-003', 'CPT-DBN-001'),
+('Pieter Botha', 'DRV004', '+27 85 444 4444', 60, 'Active', 'VH-004', 'BLO-CPT-001'),
+('Zanele Khumalo', 'DRV005', '+27 86 555 5555', 27, 'Active', 'VH-005', 'JHB-RST-001'),
+('Sipho Dlamini', 'DRV006', '+27 87 666 6666', 33, 'Active', 'VH-006', 'PTA-KZN-001'),
+('Nomvula Khumalo', 'DRV007', '+27 88 777 7777', 40, 'Active', 'VH-007', 'EL-CPT-001'),
+('Johan van Rensburg', 'DRV008', '+27 89 888 8888', 45, 'Active', 'VH-008', 'PTA-JHB-001'),
+('Lungi Maseko', 'DRV009', '+27 71 999 9999', 48, 'Active', 'VH-009', 'JHB-KIM-001'),
+('Teboho Mokoena', 'DRV010', '+27 72 000 0000', 36, 'Active', 'VH-010', 'JHB-ELS-001'),
+('Ayanda Dube', 'DRV011', '+27 73 101 0101', 25, 'Active', 'VH-011', 'CPT-KZN-002'),
+('Neo Sithole', 'DRV012', '+27 74 202 0202', 55, 'Active', 'VH-012', 'DBN-PTA-002'),
+('Boitumelo Molefe', 'DRV013', '+27 75 303 0303', 64, 'Active', 'VH-013', 'EL-RST-002'),
+('Kagiso Nkosi', 'DRV014', '+27 76 404 0404', 31, 'Active', 'VH-014', 'JHB-MID-001'),
+('Tshepo Mahlangu', 'DRV015', '+27 77 505 0505', 53, 'Active', 'VH-015', 'PTA-RSA-002'),
+('Katlego Zulu', 'DRV016', '+27 78 606 0606', 38, 'Active', 'VH-016', 'DBN-RSA-001'),
+('Simphiwe Nkuna', 'DRV017', '+27 79 707 0707', 29, 'Active', 'VH-017', 'JHB-ELS-002'),
+('Thandi Ngcobo', 'DRV018', '+27 80 808 0808', 47, 'Active', 'VH-018', 'PTA-MID-002'),
+('Mpho Molewa', 'DRV019', '+27 81 909 0909', 44, 'Active', 'VH-019', 'KZN-CPT-002'),
+('Dineo Ramaphosa', 'DRV020', '+27 82 111 0000', 58, 'Active', 'VH-020', 'JHB-KZN-003');
+
+-- ========================================
+-- SIMPLE VEHICLE LIST FOR DRIVERS
+-- ========================================
 
 INSERT INTO vehicles (RegistrationNumber, MakeModel, Year, Mileage, Status)
 VALUES
-('VH-2341-GP','Volvo FH16',2022,145000,'In-Transit'),
-('VH-8821-GP','Mercedes-Benz Actros',2023,87000,'In-Transit');
+('VH-001', 'Volvo FH16', 2023, 102000, 'In-Transit'),
+('VH-002', 'Mercedes-Benz Actros', 2022, 98500, 'In-Transit'),
+('VH-003', 'MAN TGX', 2023, 120500, 'Available'),
+('VH-004', 'Scania R500', 2021, 203145, 'Available'),
+('VH-005', 'Iveco Stralis', 2023, 52341, 'Available'),
+('VH-006', 'Volvo FH16', 2021, 312456, 'Maintenance'),
+('VH-007', 'Scania R450', 2022, 178234, 'Available'),
+('VH-008', 'Mercedes-Benz Arocs', 2021, 234567, 'Available'),
+('VH-009', 'Volvo FH13', 2022, 110000, 'Available'),
+('VH-010', 'MAN TGS', 2023, 70000, 'Available'),
+('VH-011', 'Volvo FMX', 2022, 95000, 'Available'),
+('VH-012', 'Mercedes Actros', 2023, 103000, 'Available'),
+('VH-013', 'Scania P410', 2020, 204000, 'Maintenance'),
+('VH-014', 'Iveco Stralis', 2022, 153000, 'Available'),
+('VH-015', 'MAN TGM', 2021, 187000, 'Available'),
+('VH-016', 'Volvo FH500', 2023, 91000, 'Available'),
+('VH-017', 'Mercedes-Benz Arocs', 2021, 220000, 'Available'),
+('VH-018', 'MAN TGX', 2022, 184000, 'Available'),
+('VH-019', 'Volvo FH16', 2023, 115000, 'Available'),
+('VH-020', 'Scania R410', 2023, 100000, 'Available');
 
-INSERT INTO routeplans (RouteCode, DriverId, VehicleId, RouteDescription, Progress, StartTime, Status)
-VALUES
-('RT001',1,1,'Johannesburg → Durban',60,DATE_SUB(NOW(),INTERVAL 4 HOUR),'Active'),
-('RT002',2,2,'Cape Town → Port Elizabeth',40,DATE_SUB(NOW(),INTERVAL 2 HOUR),'Active');
-
-INSERT INTO panicevents (RoutePlanId, Severity, Location, Status)
-VALUES
-(1,'Critical','N3 Highway, KZN','Active');
-
-INSERT INTO deviationalerts (RoutePlanId, Reason, Location, Severity, Status)
-VALUES
-(2,'Deviation detected','N2 Eastern Cape','High','Investigating');
+-- ========================================
+-- END OF SCRIPT
+-- ========================================
