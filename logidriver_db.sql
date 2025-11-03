@@ -1,4 +1,18 @@
 -- ========================================
+-- Add Delivery Locations Table
+-- ========================================
+CREATE TABLE IF NOT EXISTS deliverylocations (
+    LocationId INT AUTO_INCREMENT PRIMARY KEY,
+    LocationName VARCHAR(150) NOT NULL,
+    Address VARCHAR(255) NOT NULL,
+    City VARCHAR(100) NOT NULL,
+    Province VARCHAR(100) NOT NULL,
+    PostalCode VARCHAR(10) NOT NULL,
+    Latitude DECIMAL(10,6) NULL,
+    Longitude DECIMAL(10,6) NULL,
+    CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+-- ========================================
 -- DATABASE INITIALIZATION
 -- ========================================
 
@@ -147,10 +161,10 @@ INSERT INTO aspnetusers (Id, UserName, NormalizedUserName, Email, NormalizedEmai
 VALUES 
 (UUID(), 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'reinhardt@logidriver.com', 'REINHARDT@LOGIDRIVER.COM', 'AQAAAAIAAYagAAAAEBmQ7z2Uixn8kPz5K6frXWJbFS34AzM6EV27lqFZshE72OyAaH5wR3R6Q3fDkQvQ==', 'Reinhardt Haensel', 'Supervisor'),
 (UUID(), 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'raees@logidriver.com', 'RAEES@LOGIDRIVER.COM', 'Password1==', 'Raees', 'Supervisor'),
-(UUID(), 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'Password1', 'Rickus', 'Supervisor'),
-(UUID(), 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'Password1', 'Rishab', 'Supervisor'),
-(UUID(), 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'Password1', 'Robert', 'Supervisor'),
-(UUID(), 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'Password1', 'Ruan', 'Supervisor');
+(UUID(), 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'rickus@logidriver.com', 'RICKUS@LOGIDRIVER.COM', 'Password1!', 'Rickus', 'Supervisor'),
+(UUID(), 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'rishab@logidriver.com', 'RISHAB@LOGIDRIVER.COM', 'Password1!', 'Rishab', 'Supervisor'),
+(UUID(), 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'Password1!', 'Robert', 'Supervisor'),
+(UUID(), 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'Password1!', 'Ruan', 'Supervisor');
 
 -- ========================================
 -- ADD 20 SAMPLE DRIVERS
@@ -205,6 +219,99 @@ VALUES
 ('VH-018', 'MAN TGX', 2022, 184000, 'Available'),
 ('VH-019', 'Volvo FH16', 2023, 115000, 'Available'),
 ('VH-020', 'Scania R410', 2023, 100000, 'Available');
+
+--  50 delivery locations
+INSERT INTO deliverylocations (LocationName, Address, City, Province, PostalCode, Latitude, Longitude) VALUES
+('Richfield Distribution Hub', '12 Main Street', 'Johannesburg', 'Gauteng', '2000', -26.2041, 28.0473),
+('Durban Port Terminal', '45 Dock Road', 'Durban', 'KwaZulu-Natal', '4001', -29.8579, 31.0292),
+('Cape Town Freight Depot', '8 Foreshore Way', 'Cape Town', 'Western Cape', '8000', -33.9249, 18.4241),
+('Pretoria North Depot', '67 Church Street', 'Pretoria', 'Gauteng', '0001', -25.7461, 28.1881),
+('Bloemfontein Central Station', '23 Union Ave', 'Bloemfontein', 'Free State', '9301', -29.0852, 26.1596),
+('Port Elizabeth Cargo Park', '4 Marine Drive', 'Gqeberha', 'Eastern Cape', '6001', -33.9608, 25.6022),
+('East London Industrial Park', '19 Cambridge Road', 'East London', 'Eastern Cape', '5201', -32.9700, 27.8700),
+('Polokwane Logistics Yard', '77 Landros Mare St', 'Polokwane', 'Limpopo', '0700', -23.9045, 29.4689),
+('Nelspruit Distribution Center', '15 Madiba Drive', 'Mbombela', 'Mpumalanga', '1200', -25.4745, 30.9703),
+('Kimberley Freight Zone', '18 Du Toitspan Rd', 'Kimberley', 'Northern Cape', '8301', -28.7282, 24.7499),
+('George Industrial Area', '10 York Street', 'George', 'Western Cape', '6530', -33.9640, 22.4598),
+('Rustenburg Depot', '9 Bethlehem St', 'Rustenburg', 'North West', '0299', -25.6676, 27.2421),
+('Vereeniging Yard', '21 Voortrekker Rd', 'Vereeniging', 'Gauteng', '1930', -26.6731, 27.9261),
+('Welkom Central Logistics', '13 Station Rd', 'Welkom', 'Free State', '9459', -27.9774, 26.7350),
+('Mthatha Cargo Terminal', '6 Nelson Mandela Dr', 'Mthatha', 'Eastern Cape', '5100', -31.5889, 28.7844),
+('Pietermaritzburg Depot', '25 Chief Albert Luthuli St', 'Pietermaritzburg', 'KZN', '3201', -29.6006, 30.3794),
+('Tzaneen Warehouse', '34 Agatha St', 'Tzaneen', 'Limpopo', '0850', -23.8331, 30.1632),
+('Upington Cargo Base', '3 Le Roux St', 'Upington', 'Northern Cape', '8800', -28.4478, 21.2561),
+('Klerksdorp Hub', '18 Nelson Mandela Dr', 'Klerksdorp', 'North West', '2571', -26.8521, 26.6667),
+('Mafikeng Depot', '20 Carrington St', 'Mahikeng', 'North West', '2745', -25.8652, 25.6441),
+('Springs Distribution Point', '11 Second Ave', 'Springs', 'Gauteng', '1559', -26.2582, 28.4630),
+('Benoni Transport Hub', '19 Ampthill Ave', 'Benoni', 'Gauteng', '1500', -26.1909, 28.3111),
+('Randburg Dispatch', '8 Hill Street', 'Randburg', 'Gauteng', '2194', -26.0950, 28.0068),
+('Centurion Logistics Center', '14 Jean Avenue', 'Centurion', 'Gauteng', '0157', -25.8744, 28.1700),
+('Soweto Delivery Hub', '5 Vilakazi St', 'Soweto', 'Gauteng', '1804', -26.2560, 27.8540),
+('Midrand Freight Park', '2 Old Pretoria Rd', 'Midrand', 'Gauteng', '1685', -25.9895, 28.1284),
+('Sandton Drop-Off Point', '175 Rivonia Rd', 'Sandton', 'Gauteng', '2196', -26.1076, 28.0567),
+('Krugersdorp Industrial Park', '7 Paardekraal Dr', 'Krugersdorp', 'Gauteng', '1739', -26.1040, 27.7700),
+('Heidelberg Distribution Yard', '3 Voortrekker St', 'Heidelberg', 'Gauteng', '1441', -26.5059, 28.3592),
+('Roodepoort South Depot', '9 Main Reef Rd', 'Roodepoort', 'Gauteng', '1724', -26.1663, 27.8725),
+('Boksburg Industrial Area', '12 Commissioner St', 'Boksburg', 'Gauteng', '1459', -26.2135, 28.2596),
+('Alberton Logistics Park', '6 Ring Road', 'Alberton', 'Gauteng', '1449', -26.2683, 28.1228),
+('Springs East Yard', '4 Nigel Rd', 'Springs', 'Gauteng', '1560', -26.2645, 28.4520),
+('Carletonville Freight Center', '9 Annan Rd', 'Carletonville', 'Gauteng', '2499', -26.3586, 27.3989),
+('Vanderbijlpark Delivery Point', '18 Frikkie Meyer Blvd', 'Vanderbijlpark', 'Gauteng', '1900', -26.7088, 27.8310),
+('Randfontein Hub', '10 Main St', 'Randfontein', 'Gauteng', '1759', -26.1771, 27.7020),
+('Kempton Park Cargo Area', '22 Monument Rd', 'Kempton Park', 'Gauteng', '1619', -26.0979, 28.2305),
+('Germiston Central Yard', '11 Meyer St', 'Germiston', 'Gauteng', '1401', -26.2145, 28.1706),
+('Spruitview Drop Zone', '2 Khumalo St', 'Spruitview', 'Gauteng', '1425', -26.3134, 28.1815),
+('Tembisa North Depot', '19 Andrew Mapheto Dr', 'Tembisa', 'Gauteng', '1632', -25.9820, 28.2269),
+('Katlehong Industrial Park', '13 Kgotso St', 'Katlehong', 'Gauteng', '1431', -26.3662, 28.1642),
+('Ekurhuleni Yard', '1 Civic Rd', 'Ekurhuleni', 'Gauteng', '1506', -26.1350, 28.2100),
+('Modimolle Dispatch', '8 Nelson Dr', 'Modimolle', 'Limpopo', '0510', -24.7000, 28.4100),
+('Giyani Logistics', '4 Freedom St', 'Giyani', 'Limpopo', '0826', -23.3025, 30.7183),
+('Mokopane Yard', '7 Thabo Mbeki St', 'Mokopane', 'Limpopo', '0600', -24.1945, 29.0091),
+('Lephalale Hub', '10 Ellis St', 'Lephalale', 'Limpopo', '0555', -23.6733, 27.7348),
+('Phalaborwa Mine Depot', '3 Mine Rd', 'Phalaborwa', 'Limpopo', '1390', -23.9430, 31.1411),
+('Musina Border Point', '2 Beit Bridge Rd', 'Musina', 'Limpopo', '0900', -22.3511, 30.0387),
+('Louis Trichardt Drop Point', '9 Krogh St', 'Louis Trichardt', 'Limpopo', '0920', -23.0430, 29.9044),
+('Thohoyandou Warehouse', '17 University Rd', 'Thohoyandou', 'Limpopo', '0950', -22.9480, 30.4846);
+
+USE logidriver_db;
+
+-- ===================================================
+--  ADD 20 DRIVER LOGIN USERS (Role: Driver)
+--  Default password: "Password123" (pre-hashed)
+-- ===================================================
+
+-- Hash below is a valid ASP.NET Identity hash for "Password123"
+SET @PasswordHash = 'Passwprd1!';
+
+INSERT INTO aspnetusers (
+    Id, UserName, NormalizedUserName, Email, NormalizedEmail,
+    EmailConfirmed, PasswordHash, SecurityStamp, ConcurrencyStamp,
+    PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount,
+    FullName, Role, Status, CreatedAt
+)
+VALUES
+(UUID(), 'driver1@logidriver.com', 'DRIVER1@LOGIDRIVER.COM', 'driver1@logidriver.com', 'DRIVER1@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'John Mokoena', 'Driver', 'Active', NOW()),
+(UUID(), 'driver2@logidriver.com', 'DRIVER2@LOGIDRIVER.COM', 'driver2@logidriver.com', 'DRIVER2@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Sarah Molefe', 'Driver', 'Active', NOW()),
+(UUID(), 'driver3@logidriver.com', 'DRIVER3@LOGIDRIVER.COM', 'driver3@logidriver.com', 'DRIVER3@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Michael Dlamini', 'Driver', 'Active', NOW()),
+(UUID(), 'driver4@logidriver.com', 'DRIVER4@LOGIDRIVER.COM', 'driver4@logidriver.com', 'DRIVER4@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Zanele Khumalo', 'Driver', 'Active', NOW()),
+(UUID(), 'driver5@logidriver.com', 'DRIVER5@LOGIDRIVER.COM', 'driver5@logidriver.com', 'DRIVER5@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Thabo Sithole', 'Driver', 'Active', NOW()),
+(UUID(), 'driver6@logidriver.com', 'DRIVER6@LOGIDRIVER.COM', 'driver6@logidriver.com', 'DRIVER6@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Nomvula Nkosi', 'Driver', 'Active', NOW()),
+(UUID(), 'driver7@logidriver.com', 'DRIVER7@LOGIDRIVER.COM', 'driver7@logidriver.com', 'DRIVER7@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Lerato Ndlovu', 'Driver', 'Active', NOW()),
+(UUID(), 'driver8@logidriver.com', 'DRIVER8@LOGIDRIVER.COM', 'driver8@logidriver.com', 'DRIVER8@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Johan van Rensburg', 'Driver', 'Active', NOW()),
+(UUID(), 'driver9@logidriver.com', 'DRIVER9@LOGIDRIVER.COM', 'driver9@logidriver.com', 'DRIVER9@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Bongani Mthembu', 'Driver', 'Active', NOW()),
+(UUID(), 'driver10@logidriver.com', 'DRIVER10@LOGIDRIVER.COM', 'driver10@logidriver.com', 'DRIVER10@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Sibusiso Dube', 'Driver', 'Active', NOW()),
+(UUID(), 'driver11@logidriver.com', 'DRIVER11@LOGIDRIVER.COM', 'driver11@logidriver.com', 'DRIVER11@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Daniel Radebe', 'Driver', 'Active', NOW()),
+(UUID(), 'driver12@logidriver.com', 'DRIVER12@LOGIDRIVER.COM', 'driver12@logidriver.com', 'DRIVER12@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Peter Khosa', 'Driver', 'Active', NOW()),
+(UUID(), 'driver13@logidriver.com', 'DRIVER13@LOGIDRIVER.COM', 'driver13@logidriver.com', 'DRIVER13@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Amogelang Mokoena', 'Driver', 'Active', NOW()),
+(UUID(), 'driver14@logidriver.com', 'DRIVER14@LOGIDRIVER.COM', 'driver14@logidriver.com', 'DRIVER14@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Lucky Phiri', 'Driver', 'Active', NOW()),
+(UUID(), 'driver15@logidriver.com', 'DRIVER15@LOGIDRIVER.COM', 'driver15@logidriver.com', 'DRIVER15@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Kabelo Molekwa', 'Driver', 'Active', NOW()),
+(UUID(), 'driver16@logidriver.com', 'DRIVER16@LOGIDRIVER.COM', 'driver16@logidriver.com', 'DRIVER16@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Tumi Maduna', 'Driver', 'Active', NOW()),
+(UUID(), 'driver17@logidriver.com', 'DRIVER17@LOGIDRIVER.COM', 'driver17@logidriver.com', 'DRIVER17@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Phindile Mahlangu', 'Driver', 'Active', NOW()),
+(UUID(), 'driver18@logidriver.com', 'DRIVER18@LOGIDRIVER.COM', 'driver18@logidriver.com', 'DRIVER18@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Nathi Zondo', 'Driver', 'Active', NOW()),
+(UUID(), 'driver19@logidriver.com', 'DRIVER19@LOGIDRIVER.COM', 'driver19@logidriver.com', 'DRIVER19@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Prince Baloyi', 'Driver', 'Active', NOW()),
+(UUID(), 'driver20@logidriver.com', 'DRIVER20@LOGIDRIVER.COM', 'driver20@logidriver.com', 'DRIVER20@LOGIDRIVER.COM', 1, @PasswordHash, UPPER(UUID()), UPPER(UUID()), 0, 0, 1, 0, 'Reneilwe Kganyago', 'Driver', 'Active', NOW());
+
+
 
 -- ========================================
 -- END OF SCRIPT
