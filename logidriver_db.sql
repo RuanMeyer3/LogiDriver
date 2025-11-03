@@ -1,6 +1,6 @@
--- ========================================
--- Add Delivery Locations Table
--- ========================================
+
+--  Delivery Locations Table
+
 CREATE TABLE IF NOT EXISTS deliverylocations (
     LocationId INT AUTO_INCREMENT PRIMARY KEY,
     LocationName VARCHAR(150) NOT NULL,
@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS deliverylocations (
     Longitude DECIMAL(10,6) NULL,
     CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB;
--- ========================================
+
 -- DATABASE INITIALIZATION
--- ========================================
+
 
 DROP DATABASE IF EXISTS logidriver_db;
 CREATE DATABASE logidriver_db 
@@ -23,9 +23,9 @@ COLLATE utf8mb4_unicode_ci;
 
 USE logidriver_db;
 
--- ========================================
+
 -- ASP.NET Identity Core Tables
--- ========================================
+
 
 CREATE TABLE aspnetusers (
     Id VARCHAR(255) PRIMARY KEY,
@@ -67,9 +67,9 @@ CREATE TABLE aspnetuserroles (
     FOREIGN KEY (RoleId) REFERENCES aspnetroles(Id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ========================================
+
 -- APPLICATION TABLES
--- ========================================
+
 
 CREATE TABLE drivers (
     DriverId INT AUTO_INCREMENT PRIMARY KEY,
@@ -150,12 +150,9 @@ CREATE TABLE gps_points (
     INDEX idx_gps_route_ts (RoutePlanId, Timestamp)
 ) ENGINE=InnoDB;
 
--- ========================================
--- ADD SUPERVISOR USERS (WITH PASSWORDS)
--- ========================================
 
--- Note: Password hashes are placeholders — replace if integrating with Identity.
--- Hash corresponds to "Password123!" (ASP.NET Identity v3 default hash style)
+--  SUPERVISOR USERS 
+
 
 INSERT INTO aspnetusers (Id, UserName, NormalizedUserName, Email, NormalizedEmail, PasswordHash, FullName, Role)
 VALUES 
@@ -166,9 +163,9 @@ VALUES
 (UUID(), 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'robert@logidriver.com', 'ROBERT@LOGIDRIVER.COM', 'Password1!', 'Robert', 'Supervisor'),
 (UUID(), 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'ruan@logidriver.com', 'RUAN@LOGIDRIVER.COM', 'Password1!', 'Ruan', 'Supervisor');
 
--- ========================================
--- ADD 20 SAMPLE DRIVERS
--- ========================================
+
+--  20  DRIVERS
+
 
 INSERT INTO drivers (FullName, DriverCode, Phone, FatigueLevel, Status, AssignedVehicle, CurrentLocation)
 VALUES
@@ -193,9 +190,9 @@ VALUES
 ('Mpho Molewa', 'DRV019', '+27 81 909 0909', 44, 'Active', 'VH-019', 'KZN-CPT-002'),
 ('Dineo Ramaphosa', 'DRV020', '+27 82 111 0000', 58, 'Active', 'VH-020', 'JHB-KZN-003');
 
--- ========================================
--- SIMPLE VEHICLE LIST FOR DRIVERS
--- ========================================
+
+--  VEHICLE LIST FOR DRIVERS
+
 
 INSERT INTO vehicles (RegistrationNumber, MakeModel, Year, Mileage, Status)
 VALUES
@@ -275,12 +272,11 @@ INSERT INTO deliverylocations (LocationName, Address, City, Province, PostalCode
 
 USE logidriver_db;
 
--- ===================================================
---  ADD 20 DRIVER LOGIN USERS (Role: Driver)
---  Default password: "Password123" (pre-hashed)
--- ===================================================
 
--- Hash below is a valid ASP.NET Identity hash for "Password123"
+--    DRIVER LOGIN USERS 
+
+
+
 SET @PasswordHash = 'Passwprd1!';
 
 INSERT INTO aspnetusers (
@@ -313,6 +309,6 @@ VALUES
 
 
 
--- ========================================
--- END OF SCRIPT
--- ========================================
+
+-- END 
+
