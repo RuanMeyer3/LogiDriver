@@ -4,7 +4,12 @@
     ViewData["Title"] = "Add Vehicle";
 }
 
-<h2>Add Vehicle</h2>
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title-main">Add Vehicle</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Vehicles
+    </a>
+</div>
 
 <form asp-action="Create">
     <div class="form-group">
