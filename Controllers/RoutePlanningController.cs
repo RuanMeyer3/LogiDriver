@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿// These are the required namespaces for authorization, MVC, database access, and async operations
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LogiDriverPortal.Data;
@@ -6,20 +7,25 @@ using LogiDriverPortal.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Diagnostics; // Added for diagnostic logging
 
 namespace LogiDriverPortal.Controllers
 {
+    // Only logged-in users can access this controller
     [Authorize]
     public class RoutePlanningController : Controller
     {
+        // This connects the controller to the database
         private readonly ApplicationDbContext _context;
 
+        // Constructor sets up the database connection
         public RoutePlanningController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: /RoutePlanning/Index
+        // --- INDEX ACTION ---
+        // Show a list of all route plans, newest first
         public async Task<IActionResult> Index()
         {
             var routes = await _context.RoutePlans
@@ -31,10 +37,13 @@ namespace LogiDriverPortal.Controllers
             return View(routes);
         }
 
-        // GET: /RoutePlanning/Create
+        // --- CREATE ACTIONS ---
+
+        // Show the form to create a new route plan
         [HttpGet]
         public async Task<IActionResult> Create()
         {
+            // Load active drivers and available/in-transit vehicles for dropdowns
             ViewBag.Drivers = await _context.Drivers
                 .Where(d => d.Status == "Active")
                 .OrderBy(d => d.FullName)
@@ -48,19 +57,46 @@ namespace LogiDriverPortal.Controllers
             return View();
         }
 
-        // POST: /RoutePlanning/Create
+        // Save the new route plan to the database
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RoutePlan routePlan)
         {
+            // 🛑 DIAGNOSTIC LOGGING START 🛑
+            // Logs the received model data and any validation errors
+            Debug.WriteLine("==============================================");
+            Debug.WriteLine("ROUTE PLAN SUBMISSION RECEIVED:");
+            Debug.WriteLine($"StartLocation: {routePlan.StartLocation}");
+            Debug.WriteLine($"DriverId: {routePlan.DriverId}");
+
+            if (!ModelState.IsValid)
+            {
+                Debug.WriteLine("--- MODEL STATE IS INVALID ---");
+                foreach (var state in ModelState)
+                {
+                    if (state.Value.Errors.Count > 0)
+                    {
+                        Debug.WriteLine($"Field: {state.Key}");
+                        foreach (var error in state.Value.Errors)
+                        {
+                            Debug.WriteLine($"  Error: {error.ErrorMessage}");
+                        }
+                    }
+                }
+                Debug.WriteLine("------------------------------");
+            }
+            // 🛑 DIAGNOSTIC LOGGING END 🛑
+
             if (ModelState.IsValid)
             {
-                routePlan.RouteCode = GenerateRouteCode();
+                // Set auto-generated values
+                routePlan.RouteCode = await GenerateRouteCodeAsync(); // AWAIT the async code generation
                 routePlan.Status = "Active";
                 routePlan.Progress = 0;
                 routePlan.StartTime = DateTime.UtcNow;
                 routePlan.CreatedAt = DateTime.UtcNow;
 
+                // Save to database
                 _context.RoutePlans.Add(routePlan);
                 await _context.SaveChangesAsync();
 
@@ -68,19 +104,24 @@ namespace LogiDriverPortal.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Reload dropdown data if validation fails
+            // If form validation fails, reload dropdowns and show form again
+            // NOTE: Ensure this logic matches the HTTP GET for consistent data
             ViewBag.Drivers = await _context.Drivers
                 .Where(d => d.Status == "Active")
+                .OrderBy(d => d.FullName)
                 .ToListAsync();
 
             ViewBag.Vehicles = await _context.Vehicles
-                .Where(v => v.Status == "Available")
+                .Where(v => v.Status == "Available" || v.Status == "In-Transit") // Corrected for consistency
+                .OrderBy(v => v.RegistrationNumber)
                 .ToListAsync();
 
             return View(routePlan);
         }
 
-        // GET: /RoutePlanning/Edit/5
+        // --- EDIT ACTIONS ---
+
+        // Show the form to edit an existing route plan
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -94,6 +135,7 @@ namespace LogiDriverPortal.Controllers
                 return NotFound();
             }
 
+            // Load dropdowns again for editing
             ViewBag.Drivers = await _context.Drivers
                 .Where(d => d.Status == "Active")
                 .ToListAsync();
@@ -105,7 +147,7 @@ namespace LogiDriverPortal.Controllers
             return View(routePlan);
         }
 
-        // POST: /RoutePlanning/Edit/5
+        // Save changes to an existing route plan
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, RoutePlan routePlan)
@@ -134,12 +176,15 @@ namespace LogiDriverPortal.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Reload dropdowns if validation fails
             ViewBag.Drivers = await _context.Drivers.ToListAsync();
             ViewBag.Vehicles = await _context.Vehicles.ToListAsync();
             return View(routePlan);
         }
 
-        // POST: /RoutePlanning/Delete/5
+        // --- UTILITY/STATUS ACTIONS ---
+
+        // Delete a route plan from the system
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -155,7 +200,7 @@ namespace LogiDriverPortal.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /RoutePlanning/CompleteRoute/5
+        // Mark a route plan as completed
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CompleteRoute(int id)
@@ -173,16 +218,19 @@ namespace LogiDriverPortal.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Check if a route plan exists in the database
         private bool RoutePlanExists(int id)
         {
             return _context.RoutePlans.Any(e => e.RoutePlanId == id);
         }
 
-        private string GenerateRouteCode()
+        // Generate a unique route code like RT001, RT002, etc.
+        // CHANGED TO ASYNCHRONOUS METHOD to avoid deadlocks
+        private async Task<string> GenerateRouteCodeAsync()
         {
-            var lastRoute = _context.RoutePlans
+            var lastRoute = await _context.RoutePlans
                 .OrderByDescending(r => r.RoutePlanId)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync(); // Used Async version
 
             int nextNumber = 1;
             if (lastRoute != null && lastRoute.RouteCode.StartsWith("RT"))

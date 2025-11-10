@@ -16,6 +16,8 @@ namespace LogiDriverPortal.Data
         public DbSet<RoutePlan> RoutePlans { get; set; }
         public DbSet<DeviationAlert> DeviationAlerts { get; set; }
         public DbSet<PanicEvent> PanicEvents { get; set; }
+        public DbSet<DriverLocation> DriverLocations { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

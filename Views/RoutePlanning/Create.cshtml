@@ -1,87 +1,216 @@
 ﻿@model LogiDriverPortal.Models.RoutePlan
 @using LogiDriverPortal.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+
 @{
     ViewData["Title"] = "Create Route Plan";
+
+    // Convert ViewBag items to SelectListItems for safer, cleaner Razor usage
+    var driverList = ViewBag.Drivers as List<Driver>;
+    var vehicleList = ViewBag.Vehicles as List<Vehicle>;
+
+    // Create SelectLists from the ViewBag data
+    var driversSelectList = driverList?.Select(d => new SelectListItem
+    {
+        Value = d.DriverId.ToString(),
+        Text = $"{d.FullName} ({d.DriverCode}) - Fatigue: {d.FatigueLevel}%"
+    }) ?? Enumerable.Empty<SelectListItem>();
+
+    var vehiclesSelectList = vehicleList?.Select(v => new SelectListItem
+    {
+        Value = v.VehicleId.ToString(),
+        Text = $"{v.RegistrationNumber} - {v.MakeModel} ({v.Status})"
+    }) ?? Enumerable.Empty<SelectListItem>();
 }
 
-<div class="create-route">
-    <div class="page-header">
+<div class="create-route container mt-4">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
         <h2 class="page-title-main">Create New Route Plan</h2>
         <a asp-action="Index" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Back to Routes
         </a>
     </div>
 
-    <div class="form-container">
-        <form asp-action="Create" method="post">
-            <div class="form-card">
-                <h3 class="form-section-title">
-                    <i class="fas fa-info-circle"></i> Route Information
-                </h3>
+    <div class="form-container card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label asp-for="RouteDescription" class="form-label">Route Description</label>
-                        <input asp-for="RouteDescription" class="form-control" placeholder="e.g., Johannesburg → Cape Town via N1" />
-                        <span asp-validation-for="RouteDescription" class="text-danger"></span>
-                    </div>
+                <div class="form-card">
+                    <h3 class="form-section-title mb-3 border-bottom pb-2">
+                        <i class="fas fa-map-marked-alt text-primary"></i> Route Information
+                    </h3>
 
-                    <div class="col-md-6">
-                        <label asp-for="DriverId" class="form-label">Assign Driver</label>
-                        <select asp-for="DriverId" class="form-select">
-                            <option value="">-- Select Driver --</option>
-                            @foreach (var driver in ViewBag.Drivers as List<Driver>)
-                            {
-                                <option value="@driver.DriverId">
-                                    @driver.FullName (@driver.DriverCode) - Fatigue: @driver.FatigueLevel%
-                                </option>
-                            }
-                        </select>
-                        <span asp-validation-for="DriverId" class="text-danger"></span>
-                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="StartLocation" class="form-label">
+                                <i class="fas fa-map-marker-alt text-success"></i> Start Location
+                            </label>
+                            <input asp-for="StartLocation" class="form-control" placeholder="e.g., Johannesburg" />
+                            <span asp-validation-for="StartLocation" class="text-danger"></span>
+                        </div>
 
-                    <div class="col-md-6">
-                        <label asp-for="VehicleId" class="form-label">Assign Vehicle</label>
-                        <select asp-for="VehicleId" class="form-select">
-                            <option value="">-- Select Vehicle --</option>
-                            @foreach (var vehicle in ViewBag.Vehicles as List<Vehicle>)
-                            {
-                                <option value="@vehicle.VehicleId">
-                                    @vehicle.RegistrationNumber - @vehicle.MakeModel (@vehicle.Status)
-                                </option>
-                            }
-                        </select>
-                        <span asp-validation-for="VehicleId" class="text-danger"></span>
-                    </div>
+                        <div class="col-md-6">
+                            <label asp-for="EndLocation" class="form-label">
+                                <i class="fas fa-flag-checkered text-danger"></i> End Location
+                            </label>
+                            <input asp-for="EndLocation" class="form-control" placeholder="e.g., Cape Town" />
+                            <span asp-validation-for="EndLocation" class="text-danger"></span>
+                        </div>
 
-                    <div class="col-md-6">
-                        <label asp-for="EstimatedArrival" class="form-label">Estimated Arrival</label>
-                        <input asp-for="EstimatedArrival" class="form-control" type="datetime-local" />
-                        <span asp-validation-for="EstimatedArrival" class="text-danger"></span>
-                    </div>
+                        <div class="col-md-12">
+                            <label asp-for="Waypoints" class="form-label">
+                                <i class="fas fa-route text-info"></i> Waypoints (Optional)
+                            </label>
+                            <textarea asp-for="Waypoints" class="form-control" rows="2"
+                                      placeholder="e.g., Harrismith, Ladysmith (comma-separated stops)"></textarea>
+                            <small class="text-muted">Add intermediate stops along the route</small>
+                            <span asp-validation-for="Waypoints" class="text-danger"></span>
+                        </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Route Code</label>
-                        <input type="text" class="form-control" value="Auto-generated" readonly />
-                        <small class="text-muted">System will generate route code automatically</small>
+                        <h3 class="form-section-title mt-4 mb-3 border-bottom pb-2">
+                            <i class="fas fa-truck-moving text-secondary"></i> Assignment & Timing
+                        </h3>
+
+                        <div class="col-md-6">
+                            <label asp-for="DriverId" class="form-label">
+                                <i class="fas fa-user"></i> Assign Driver
+                            </label>
+                            <select asp-for="DriverId" class="form-select"
+                                    asp-items="@driversSelectList">
+                                <option value="">-- Select Driver --</option>
+                            </select>
+                            <span asp-validation-for="DriverId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="VehicleId" class="form-label">
+                                <i class="fas fa-truck"></i> Assign Vehicle
+                            </label>
+                            <select asp-for="VehicleId" class="form-select"
+                                    asp-items="@vehiclesSelectList">
+                                <option value="">-- Select Vehicle --</option>
+                            </select>
+                            <span asp-validation-for="VehicleId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EstimatedArrival" class="form-label">
+                                <i class="fas fa-clock"></i> Estimated Arrival (Optional)
+                            </label>
+                            <input asp-for="EstimatedArrival" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="EstimatedArrival" class="text-danger"></span>
+                        </div>
+
+                        <input type="hidden" asp-for="DistanceKm" id="DistanceKmInput" />
+
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-hashtag"></i> Route Code
+                            </label>
+                            <input type="text" class="form-control" value="Auto-generated on save" readonly />
+                            <small class="text-muted">System will generate route code (RT001, etc.) automatically.</small>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Create Route Plan
-                </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">
-                    <i class="fas fa-times"></i> Cancel
-                </a>
-            </div>
-        </form>
+                <div class="route-preview mt-4">
+                    <div class="preview-card p-3 border rounded">
+                        <h5 class="mb-2"><i class="fas fa-route"></i> Route Preview</h5>
+                        <div class="route-visualization d-flex align-items-center justify-content-between">
+                            <div class="route-point start-point text-success">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span id="startPreview">Select start location</span>
+                            </div>
+                            <div class="route-arrow text-secondary mx-2 flex-grow-1 text-center">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                            <div class="route-point end-point text-danger">
+                                <i class="fas fa-flag-checkered"></i>
+                                <span id="endPreview">Select end location</span>
+                            </div>
+                        </div>
+                        <p class="estimated-distance mt-2 text-muted" id="distancePreview">
+                            <i class="fas fa-road"></i> Distance: Not calculated
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-actions mt-4 text-center">
+                    <button type="submit" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-save"></i> Create Route Plan
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        const startInput = document.querySelector('input[name="StartLocation"]');
+        const endInput = document.querySelector('input[name="EndLocation"]');
+        const startPreview = document.getElementById('startPreview');
+        const endPreview = document.getElementById('endPreview');
+        const distancePreview = document.getElementById('distancePreview');
+        const distanceKmInput = document.getElementById('DistanceKmInput'); // Hidden input
+
+        // Simplified, unidirectional distance map (approximate)
+        const distances = {
+            'Johannesburg': { 'Cape Town': 1400, 'Durban': 570, 'Pretoria': 50 },
+            'Cape Town': { 'Johannesburg': 1400, 'Durban': 1650 },
+            'Durban': { 'Johannesburg': 570, 'Cape Town': 1650 }
+            // Add more common routes here...
+        };
+
+        function updatePreview() {
+            const start = startInput.value.trim();
+            const end = endInput.value.trim();
+
+            // Update Preview Text
+            startPreview.textContent = start || 'Select start location';
+            endPreview.textContent = end || 'Select end location';
+
+            // --- Distance Calculation Logic ---
+            if (start && end) {
+                let distance = null; // Default to null
+
+                // Check straight route
+                if (distances[start] && distances[start][end]) {
+                    distance = distances[start][end];
+                }
+                // Check reverse route
+                else if (distances[end] && distances[end][start]) {
+                    distance = distances[end][start];
+                }
+
+                if (distance) {
+                    const hours = Math.round(distance / 80); // Estimate travel time at 80 km/h
+                    distancePreview.innerHTML = `
+                            <i class="fas fa-road"></i> Distance: **~${distance} km**
+                            <span class="text-muted">| ~${hours} hours travel</span>
+                        `;
+                    distanceKmInput.value = distance; // Set the hidden input value for submission
+                } else {
+                    // No match found in map, use a default approximation
+                    distancePreview.innerHTML = '<i class="fas fa-road"></i> Distance: **Approximate** (500 km)';
+                    distanceKmInput.value = 500; // Set a default distance
+                }
+            } else {
+                distancePreview.innerHTML = '<i class="fas fa-road"></i> Distance: Not calculated';
+                distanceKmInput.value = ''; // Clear hidden input
+            }
+        }
+
+        startInput.addEventListener('input', updatePreview);
+        endInput.addEventListener('input', updatePreview);
+
+        // Initial run in case the browser pre-fills inputs
+        document.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
 }

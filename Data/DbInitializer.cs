@@ -131,44 +131,7 @@ namespace LogiDriverPortal.Data
             context.Vehicles.AddRange(vehicles);
             context.SaveChanges();
 
-            // Seed Route Plans
-            var routes = new RoutePlan[]
-            {
-                new RoutePlan
-                {
-                    RouteCode = "RT001",
-                    DriverId = 1,
-                    VehicleId = 1,
-                    RouteDescription = "Johannesburg → Durban",
-                    Progress = 65,
-                    EstimatedArrival = DateTime.UtcNow.AddHours(4),
-                    StartTime = DateTime.UtcNow.AddHours(-6),
-                    Status = "Active"
-                },
-                new RoutePlan
-                {
-                    RouteCode = "RT002",
-                    DriverId = 2,
-                    VehicleId = 2,
-                    RouteDescription = "Cape Town → Port Elizabeth",
-                    Progress = 42,
-                    EstimatedArrival = DateTime.UtcNow.AddHours(6),
-                    StartTime = DateTime.UtcNow.AddHours(-3),
-                    Status = "Active"
-                },
-                new RoutePlan
-                {
-                    RouteCode = "RT003",
-                    DriverId = 3,
-                    VehicleId = 3,
-                    RouteDescription = "Pretoria → Bloemfontein",
-                    Progress = 78,
-                    EstimatedArrival = DateTime.UtcNow.AddHours(2),
-                    StartTime = DateTime.UtcNow.AddHours(-5),
-                    Status = "Active"
-                }
-            };
-            context.RoutePlans.AddRange(routes);
+           
             context.SaveChanges();
 
             // Seed Panic Events

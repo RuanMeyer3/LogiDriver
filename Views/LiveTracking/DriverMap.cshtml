@@ -1,0 +1,193 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.ViewModels.DriverMapViewModel>
+
+    @{
+    ViewData["Title"] = "Live Vehicle Tracking";
+    }
+
+    <div class="live-tracking">
+        <div class="page-header">
+            <h2 class="page-title-main">Live Vehicle Tracking</h2>
+            <div>
+                <button class="btn btn-outline-primary" onclick="refreshTracking()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container">
+            <div class="map-placeholder">
+                <div class="map-overlay">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h3>Real-time GPS Tracking</h3>
+                    <p>Live vehicle locations across South Africa</p>
+                    <small>📍 @Model.Count() Active Routes</small>
+                </div>
+                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=600&fit=crop"
+                     alt="Map" class="map-bg" />
+            </div>
+        </div>
+
+        <!-- Active Vehicles List -->
+        <div class="tracking-grid">
+            @foreach (var driver in Model)
+{
+            <div class="tracking-card">
+                <div class="tracking-card-header">
+                    <div class="vehicle-status">
+                        <div class="status-indicator status-active"></div>
+                        <strong>Driver ID: @driver.DriverId</strong>
+                    </div>
+                    <span class="badge badge-success">
+                        <i class="fas fa-broadcast-tower"></i> Live
+                    </span>
+                </div>
+
+                <div class="tracking-card-body">
+                    <div class="info-row">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Lat: @driver.Latest.Latitude, Lng: @driver.Latest.Longitude</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-clock"></i>
+                        <span>@driver.Latest.Timestamp.ToString("HH:mm:ss")</span>
+                    </div>
+                </div>
+
+                <!-- Optional: Render route as polyline or list -->
+                <div class="route-history">
+                    <strong>Route History:</strong>
+                    <ul>
+                        @foreach (var point in driver.Route)
+                {
+                        <li>@point.Timestamp.ToString("HH:mm:ss") → (@point.Latitude, @point.Longitude)</li>
+                }
+                    </ul>
+                </div>
+            </div>
+}
+
+        </div>
+
+        
+    </div>
+    
+
+    @if (!Model.Any())
+    {
+    <div class="empty-state">
+        <i class="fas fa-map-marker-alt"></i>
+        <h3>No Active Routes</h3>
+        <p>No vehicles are currently being tracked</p>
+        <a asp-controller="RoutePlanning" asp-action="Index" class="btn btn-primary">
+            <i class="fas fa-route"></i> View All Routes
+        </a>
+    </div>
+    }
+    </div>
+
+    @section Scripts {
+        <script>
+            let refreshInterval;
+
+            function startAutoRefresh() {
+                refreshInterval = setInterval(() => {
+                    refreshTracking();
+                }, 10000); // 10 seconds
+            }
+
+            async function refreshTracking() {
+                console.log('Refreshing driver location data...');
+                const btn = document.querySelector('.btn-outline-primary');
+                const icon = btn.querySelector('i');
+                icon.classList.add('fa-spin');
+
+                try {
+                    const response = await fetch('/LiveTracking/GetDriverLocations');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    const trackingGrid = document.querySelector('.tracking-grid');
+                    trackingGrid.innerHTML = ''; // Clear existing cards
+
+                    const activeRoutesCount = document.querySelector('.map-overlay small');
+                    activeRoutesCount.textContent = `📍 ${data.length} Active Drivers`;
+
+                    if (data.length === 0) {
+                        trackingGrid.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <h3>No Active Drivers</h3>
+                                    <p>No vehicles are currently being tracked</p>
+                                    <a href="/RoutePlanning/Index" class="btn btn-primary">
+                                        <i class="fas fa-route"></i> View All Routes
+                                    </a>
+                                </div>
+                            `;
+                    } else {
+                        data.forEach(driver => {
+                            const cardHtml = `
+                                    <div class="tracking-card">
+                                        <div class="tracking-card-header">
+                                            <div class="vehicle-status">
+                                                <div class="status-indicator status-active"></div>
+                                                <strong>Driver ID: ${driver.driverId}</strong>
+                                            </div>
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-broadcast-tower"></i> Live
+                                            </span>
+                                        </div>
+
+                                        <div class="tracking-card-body">
+                                            <div class="info-row">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                <span>Lat: ${driver.latest.latitude}, Lng: ${driver.latest.longitude}</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <i class="fas fa-clock"></i>
+                                                <span>${new Date(driver.latest.timestamp).toLocaleTimeString()}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="route-history">
+                                            <strong>Route History:</strong>
+                                            <ul>
+                                                ${driver.route.map(p => `
+                                                    <li>${new Date(p.timestamp).toLocaleTimeString()} → (${p.latitude}, ${p.longitude})</li>
+                                                `).join('')}
+                                            </ul>
+                                        </div>
+
+                                        <div class="tracking-card-actions">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="centerOnVehicle(${driver.latest.latitude}, ${driver.latest.longitude})">
+                                                <i class="fas fa-crosshairs"></i> Locate
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            trackingGrid.insertAdjacentHTML('beforeend', cardHtml);
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('Error refreshing driver data:', error);
+                } finally {
+                    icon.classList.remove('fa-spin');
+                }
+            }
+
+            function centerOnVehicle(lat, lng) {
+                alert(`Centering map on location: (${lat}, ${lng})`);
+                // Replace with actual map logic
+            }
+
+            startAutoRefresh();
+
+            window.addEventListener('beforeunload', () => {
+                clearInterval(refreshInterval);
+            });
+        </script>
+    }
+

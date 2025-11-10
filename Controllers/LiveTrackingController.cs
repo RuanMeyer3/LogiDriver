@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using LogiDriverPortal.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using LogiDriverPortal.Models.ViewModels;
+
 
 namespace LogiDriverPortal.Controllers
 {
@@ -113,5 +115,25 @@ namespace LogiDriverPortal.Controllers
 
             return Json(activeRoutes);
         }
+
+
+
+
+        public IActionResult DriverMap()
+        {
+            var activeDrivers = _context.DriverLocations
+                .Where(dl => dl.IsActive)
+                .GroupBy(dl => dl.DriverId)
+                .Select(g => new DriverMapViewModel
+                {
+                    DriverId = g.Key,
+                    Latest = g.OrderByDescending(dl => dl.Timestamp).FirstOrDefault(),
+                    Route = g.OrderBy(dl => dl.Timestamp).ToList()
+                }).ToList();
+
+            return View(activeDrivers);
+        }
+
+
     }
 }
