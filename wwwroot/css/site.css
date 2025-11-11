@@ -1718,3 +1718,73 @@ body {
     }
 }
 
+
+.map-container {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+#map {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-stats {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    gap: 25px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+    .stat-item i {
+        color: var(--primary-blue);
+        font-size: 18px;
+    }
+
+    .stat-item strong {
+        color: var(--gray-900);
+        font-size: 20px;
+    }
+
+.map-info-window {
+    padding: 10px;
+    min-width: 200px;
+}
+
+    .map-info-window h4 {
+        margin: 0 0 10px 0;
+        color: var(--primary-blue);
+        font-size: 16px;
+    }
+
+    .map-info-window p {
+        margin: 5px 0;
+        font-size: 13px;
+        color: var(--gray-700);
+    }
+
+    .map-info-window strong {
+        color: var(--gray-900);
+    }
+
+@media (max-width: 768px) {
+    .map-stats {
+        position: static;
+        margin-top: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+

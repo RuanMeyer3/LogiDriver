@@ -18,7 +18,6 @@ namespace LogiDriverPortal.Data
         public DbSet<PanicEvent> PanicEvents { get; set; }
         public DbSet<DriverLocation> DriverLocations { get; set; }
 
-
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -35,6 +34,35 @@ namespace LogiDriverPortal.Data
                 .WithMany()
                 .HasForeignKey(r => r.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // -------------------------------
+            // Force all tables to lowercase
+            // -------------------------------
+            foreach (var entity in builder.Model.GetEntityTypes())
+            {
+                // Set table name to lowercase
+                entity.SetTableName(entity.GetTableName().ToLower());
+
+                // Optional: also set column names to lowercase
+                foreach (var property in entity.GetProperties())
+                {
+                    property.SetColumnName(property.GetColumnName().ToLower());
+                }
+
+                // Optional: also lowercase keys/constraints (if needed)
+                foreach (var key in entity.GetKeys())
+                {
+                    key.SetName(key.GetName().ToLower());
+                }
+                foreach (var key in entity.GetForeignKeys())
+                {
+                    key.SetConstraintName(key.GetConstraintName().ToLower());
+                }
+                foreach (var index in entity.GetIndexes())
+                {
+                    index.SetDatabaseName(index.GetDatabaseName().ToLower());
+                }
+            }
         }
     }
 }

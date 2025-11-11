@@ -1,5 +1,4 @@
 ﻿@model IEnumerable<LogiDriverPortal.Models.ViewModels.DriverMapViewModel>
-
     @{
     ViewData["Title"] = "Live Vehicle Tracking";
     }
@@ -11,32 +10,36 @@
                 <button class="btn btn-outline-primary" onclick="refreshTracking()">
                     <i class="fas fa-sync"></i> Refresh
                 </button>
+                <button class="btn btn-outline-secondary" onclick="simulateMovement()">
+                    <i class="fas fa-play"></i> Simulate Movement
+                </button>
             </div>
         </div>
 
-        <!-- Map Container -->
+        <!-- Google Maps Container -->
         <div class="map-container">
-            <div class="map-placeholder">
-                <div class="map-overlay">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h3>Real-time GPS Tracking</h3>
-                    <p>Live vehicle locations across South Africa</p>
-                    <small>📍 @Model.Count() Active Routes</small>
-                </div>
-                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=600&fit=crop"
-                     alt="Map" class="map-bg" />
+            <div id="map" style="width: 100%; height: 500px; border-radius: 12px;"></div>
+            <div class="map-stats">
+                <span class="stat-item">
+                    <i class="fas fa-users"></i>
+                    <strong id="activeDriversCount">@Model.Count()</strong> Active Drivers
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <strong id="totalLocationsCount">@Model.Sum(d => d.Route.Count)</strong> Location Points
+                </span>
             </div>
         </div>
 
-        <!-- Active Vehicles List -->
-        <div class="tracking-grid">
+        <!-- Active Drivers List -->
+        <div class="tracking-grid" id="trackingGrid">
             @foreach (var driver in Model)
-{
-            <div class="tracking-card">
+        {
+            <div class="tracking-card" data-driver-id="@driver.DriverId">
                 <div class="tracking-card-header">
                     <div class="vehicle-status">
                         <div class="status-indicator status-active"></div>
-                        <strong>Driver ID: @driver.DriverId</strong>
+                        <strong>@driver.DriverName</strong>
                     </div>
                     <span class="badge badge-success">
                         <i class="fas fa-broadcast-tower"></i> Live
@@ -44,150 +47,384 @@
                 </div>
 
                 <div class="tracking-card-body">
-                    <div class="info-row">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Lat: @driver.Latest.Latitude, Lng: @driver.Latest.Longitude</span>
+                    <div class="tracking-info">
+                        <div class="info-row">
+                            <i class="fas fa-id-card"></i>
+                            <span>@driver.DriverCode</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-truck"></i>
+                            <span>@driver.VehicleRegistration</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="location-coords">
+                                @driver.Latest.Latitude.ToString("F6"), @driver.Latest.Longitude.ToString("F6")
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-clock"></i>
+                            <span class="timestamp">
+                                @driver.Latest.Timestamp.ToString("HH:mm:ss")
+                            </span>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <i class="fas fa-clock"></i>
-                        <span>@driver.Latest.Timestamp.ToString("HH:mm:ss")</span>
+
+                    <div class="tracking-stats">
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-orange">
+                                <i class="fas fa-battery-half"></i>
+                            </div>
+                            <div>
+                                <small>Fatigue</small>
+                                <strong class="@(driver.FatigueLevel > 70 ? "text-danger" : "")">
+                                    @driver.FatigueLevel%
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-blue">
+                                <i class="fas fa-route"></i>
+                            </div>
+                            <div>
+                                <small>Route Points</small>
+                                <strong>@driver.Route.Count</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Optional: Render route as polyline or list -->
-                <div class="route-history">
-                    <strong>Route History:</strong>
-                    <ul>
-                        @foreach (var point in driver.Route)
-                {
-                        <li>@point.Timestamp.ToString("HH:mm:ss") → (@point.Latitude, @point.Longitude)</li>
-                }
-                    </ul>
+                <div class="tracking-card-actions">
+                    <button class="btn btn-sm btn-primary" onclick="focusOnDriver(@driver.DriverId)">
+                        <i class="fas fa-crosshairs"></i> Locate on Map
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleRoute(@driver.DriverId)">
+                        <i class="fas fa-route"></i> Toggle Route
+                    </button>
                 </div>
             </div>
-}
-
+        }
         </div>
 
-        
-    </div>
-    
-
-    @if (!Model.Any())
+        @if (!Model.Any())
     {
-    <div class="empty-state">
-        <i class="fas fa-map-marker-alt"></i>
-        <h3>No Active Routes</h3>
-        <p>No vehicles are currently being tracked</p>
-        <a asp-controller="RoutePlanning" asp-action="Index" class="btn btn-primary">
-            <i class="fas fa-route"></i> View All Routes
-        </a>
-    </div>
+        <div class="empty-state">
+            <i class="fas fa-map-marker-alt"></i>
+            <h3>No Active Drivers</h3>
+            <p>No vehicles are currently being tracked</p>
+            <a asp-controller="RoutePlanning" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-route"></i> View All Routes
+            </a>
+        </div>
     }
     </div>
 
     @section Scripts {
-        <script>
-            let refreshInterval;
+        <!-- Google Maps API -->
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYoQRHsI3wj42WIKTyJH68OvoQAzWEa9w&callback=initMap" async defer></script>
 
-            function startAutoRefresh() {
-                refreshInterval = setInterval(() => {
-                    refreshTracking();
-                }, 10000); // 10 seconds
+        <script>
+            let map;
+            let markers = {};
+            let polylines = {};
+            let infoWindows = {};
+            let refreshInterval;
+            let isInitialLoad = true;
+            let userInteracted = false;
+
+            // Initialize Google Map
+            function initMap() {
+                // Center on South Africa (Johannesburg area)
+                const center = { lat: -26.2041, lng: 28.0473 };
+
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 12,
+                    center: center,
+                    mapTypeId: 'roadmap',
+                    styles: [
+                        {
+                            featureType: 'poi',
+                            elementType: 'labels',
+                            stylers: [{ visibility: 'off' }]
+                        }
+                    ]
+                });
+
+                // Track when user interacts with map
+                map.addListener('zoom_changed', () => { userInteracted = true; });
+                map.addListener('center_changed', () => { userInteracted = true; });
+                map.addListener('drag', () => { userInteracted = true; });
+
+                // Load initial driver locations
+                loadDriverLocations();
+
+                // Start auto-refresh
+                startAutoRefresh();
             }
 
+            // Load driver locations and add markers
+            async function loadDriverLocations(preserveViewport = false) {
+                try {
+                    const response = await fetch('/LiveTracking/GetDriverLocations');
+                    if (!response.ok) throw new Error('Failed to fetch locations');
+
+                    const drivers = await response.json();
+
+                    // Update stats
+                    document.getElementById('activeDriversCount').textContent = drivers.length;
+                    let totalPoints = 0;
+
+                    drivers.forEach(driver => {
+                        totalPoints += driver.route.length;
+
+                        // Update existing marker or create new one
+                        if (markers[driver.driverId]) {
+                            updateDriverMarker(driver);
+                        } else {
+                            addDriverToMap(driver);
+                        }
+                    });
+
+                    document.getElementById('totalLocationsCount').textContent = totalPoints;
+
+                    // Only fit bounds on initial load or if user hasn't interacted
+                    if (isInitialLoad || (!userInteracted && !preserveViewport)) {
+                        if (drivers.length > 0) {
+                            const bounds = new google.maps.LatLngBounds();
+                            drivers.forEach(driver => {
+                                bounds.extend({
+                                    lat: driver.latest.latitude,
+                                    lng: driver.latest.longitude
+                                });
+                            });
+                            map.fitBounds(bounds);
+                        }
+                        isInitialLoad = false;
+                    }
+
+                } catch (error) {
+                    console.error('Error loading driver locations:', error);
+                }
+            }
+
+            // Update existing marker position smoothly
+            function updateDriverMarker(driver) {
+                const marker = markers[driver.driverId];
+                const polyline = polylines[driver.driverId];
+
+                if (marker) {
+                    const newPosition = {
+                        lat: driver.latest.latitude,
+                        lng: driver.latest.longitude
+                    };
+
+                    // Smoothly animate marker to new position
+                    marker.setPosition(newPosition);
+
+                    // Update marker icon color based on fatigue
+                    const icon = {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                        scale: 6,
+                        fillColor: getFatigueColor(driver.fatigueLevel),
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                        rotation: driver.latest.heading || 0
+                    };
+                    marker.setIcon(icon);
+
+                    // Update info window content
+                    const infoContent = `
+                            <div class="map-info-window">
+                                <h4>${driver.driverName}</h4>
+                                <p><strong>Code:</strong> ${driver.driverCode}</p>
+                                <p><strong>Vehicle:</strong> ${driver.vehicleRegistration}</p>
+                                <p><strong>Fatigue:</strong> ${driver.fatigueLevel}%</p>
+                                <p><strong>Location:</strong> ${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}</p>
+                                <p><strong>Updated:</strong> ${new Date(driver.latest.timestamp).toLocaleTimeString()}</p>
+                            </div>
+                        `;
+                    infoWindows[driver.driverId].setContent(infoContent);
+
+                    // Update polyline route
+                    if (polyline) {
+                        const routePath = driver.route.map(point => ({
+                            lat: point.latitude,
+                            lng: point.longitude
+                        }));
+                        polyline.setPath(routePath);
+                    }
+                }
+            }
+
+            // Add driver marker and route to map
+            function addDriverToMap(driver) {
+                const position = {
+                    lat: driver.latest.latitude,
+                    lng: driver.latest.longitude
+                };
+
+                // Custom marker icon
+                const icon = {
+                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                    scale: 6,
+                    fillColor: getFatigueColor(driver.fatigueLevel),
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 2,
+                    rotation: driver.latest.heading || 0
+                };
+
+                // Create marker
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    icon: icon,
+                    title: driver.driverName,
+                    animation: google.maps.Animation.DROP
+                });
+
+                // Info window content
+                const infoContent = `
+                        <div class="map-info-window">
+                            <h4>${driver.driverName}</h4>
+                            <p><strong>Code:</strong> ${driver.driverCode}</p>
+                            <p><strong>Vehicle:</strong> ${driver.vehicleRegistration}</p>
+                            <p><strong>Fatigue:</strong> ${driver.fatigueLevel}%</p>
+                            <p><strong>Location:</strong> ${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}</p>
+                            <p><strong>Updated:</strong> ${new Date(driver.latest.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                    `;
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: infoContent
+                });
+
+                marker.addListener('click', () => {
+                    // Close all other info windows
+                    Object.values(infoWindows).forEach(iw => iw.close());
+                    infoWindow.open(map, marker);
+                });
+
+                // Draw route polyline
+                const routePath = driver.route.map(point => ({
+                    lat: point.latitude,
+                    lng: point.longitude
+                }));
+
+                const polyline = new google.maps.Polyline({
+                    path: routePath,
+                    geodesic: true,
+                    strokeColor: getFatigueColor(driver.fatigueLevel),
+                    strokeOpacity: 0.7,
+                    strokeWeight: 3,
+                    map: map
+                });
+
+                markers[driver.driverId] = marker;
+                polylines[driver.driverId] = polyline;
+                infoWindows[driver.driverId] = infoWindow;
+            }
+
+            // Get color based on fatigue level
+            function getFatigueColor(fatigueLevel) {
+                if (fatigueLevel > 70) return '#ef4444'; // Red
+                if (fatigueLevel > 50) return '#f59e0b'; // Orange
+                return '#10b981'; // Green
+            }
+
+            // Focus on specific driver
+            function focusOnDriver(driverId) {
+                const marker = markers[driverId];
+                if (marker) {
+                    map.setCenter(marker.getPosition());
+                    map.setZoom(15);
+                    infoWindows[driverId].open(map, marker);
+
+                    // Bounce animation
+                    marker.setAnimation(google.maps.Animation.BOUNCE);
+                    setTimeout(() => marker.setAnimation(null), 2000);
+                }
+            }
+
+            // Toggle route visibility
+            function toggleRoute(driverId) {
+                const polyline = polylines[driverId];
+                if (polyline) {
+                    const visible = polyline.getMap() !== null;
+                    polyline.setMap(visible ? null : map);
+                }
+            }
+
+            // Refresh tracking data
             async function refreshTracking() {
-                console.log('Refreshing driver location data...');
                 const btn = document.querySelector('.btn-outline-primary');
                 const icon = btn.querySelector('i');
                 icon.classList.add('fa-spin');
 
                 try {
-                    const response = await fetch('/LiveTracking/GetDriverLocations');
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-
-                    const trackingGrid = document.querySelector('.tracking-grid');
-                    trackingGrid.innerHTML = ''; // Clear existing cards
-
-                    const activeRoutesCount = document.querySelector('.map-overlay small');
-                    activeRoutesCount.textContent = `📍 ${data.length} Active Drivers`;
-
-                    if (data.length === 0) {
-                        trackingGrid.innerHTML = `
-                                <div class="empty-state">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <h3>No Active Drivers</h3>
-                                    <p>No vehicles are currently being tracked</p>
-                                    <a href="/RoutePlanning/Index" class="btn btn-primary">
-                                        <i class="fas fa-route"></i> View All Routes
-                                    </a>
-                                </div>
-                            `;
-                    } else {
-                        data.forEach(driver => {
-                            const cardHtml = `
-                                    <div class="tracking-card">
-                                        <div class="tracking-card-header">
-                                            <div class="vehicle-status">
-                                                <div class="status-indicator status-active"></div>
-                                                <strong>Driver ID: ${driver.driverId}</strong>
-                                            </div>
-                                            <span class="badge badge-success">
-                                                <i class="fas fa-broadcast-tower"></i> Live
-                                            </span>
-                                        </div>
-
-                                        <div class="tracking-card-body">
-                                            <div class="info-row">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                                <span>Lat: ${driver.latest.latitude}, Lng: ${driver.latest.longitude}</span>
-                                            </div>
-                                            <div class="info-row">
-                                                <i class="fas fa-clock"></i>
-                                                <span>${new Date(driver.latest.timestamp).toLocaleTimeString()}</span>
-                                            </div>
-                                        </div>
-
-                                        <div class="route-history">
-                                            <strong>Route History:</strong>
-                                            <ul>
-                                                ${driver.route.map(p => `
-                                                    <li>${new Date(p.timestamp).toLocaleTimeString()} → (${p.latitude}, ${p.longitude})</li>
-                                                `).join('')}
-                                            </ul>
-                                        </div>
-
-                                        <div class="tracking-card-actions">
-                                            <button class="btn btn-sm btn-outline-primary" onclick="centerOnVehicle(${driver.latest.latitude}, ${driver.latest.longitude})">
-                                                <i class="fas fa-crosshairs"></i> Locate
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-                            trackingGrid.insertAdjacentHTML('beforeend', cardHtml);
-                        });
-                    }
-
+                    // Preserve current viewport during auto-refresh
+                    await loadDriverLocations(true);
+                    await updateDriverCards();
                 } catch (error) {
-                    console.error('Error refreshing driver data:', error);
+                    console.error('Error refreshing:', error);
                 } finally {
                     icon.classList.remove('fa-spin');
                 }
             }
 
-            function centerOnVehicle(lat, lng) {
-                alert(`Centering map on location: (${lat}, ${lng})`);
-                // Replace with actual map logic
+            // Update driver cards without reloading page
+            async function updateDriverCards() {
+                try {
+                    const response = await fetch('/LiveTracking/GetDriverLocations');
+                    const drivers = await response.json();
+
+                    drivers.forEach(driver => {
+                        const card = document.querySelector(`[data-driver-id="${driver.driverId}"]`);
+                        if (card) {
+                            // Update coordinates
+                            card.querySelector('.location-coords').textContent =
+                                `${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}`;
+
+                            // Update timestamp
+                            card.querySelector('.timestamp').textContent =
+                                new Date(driver.latest.timestamp).toLocaleTimeString();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error updating cards:', error);
+                }
             }
 
-            startAutoRefresh();
+            // Simulate driver movement (for testing)
+            async function simulateMovement() {
+                try {
+                    const response = await fetch('/LiveTracking/SimulateMovement', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
+                    if (response.ok) {
+                        await refreshTracking();
+                        console.log('Movement simulated successfully');
+                    }
+                } catch (error) {
+                    console.error('Error simulating movement:', error);
+                }
+            }
+
+            // Auto-refresh every 10 seconds
+            function startAutoRefresh() {
+                refreshInterval = setInterval(() => {
+                    refreshTracking();
+                }, 10000);
+            }
+
+            // Cleanup on page unload
             window.addEventListener('beforeunload', () => {
                 clearInterval(refreshInterval);
             });
         </script>
     }
-
