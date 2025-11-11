@@ -22,7 +22,6 @@ namespace LogiDriverPortal.Data
         {
             base.OnModelCreating(builder);
 
-            // Configure relationships
             builder.Entity<RoutePlan>()
                 .HasOne(r => r.Driver)
                 .WithMany()
@@ -35,21 +34,15 @@ namespace LogiDriverPortal.Data
                 .HasForeignKey(r => r.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // -------------------------------
-            // Force all tables to lowercase
-            // -------------------------------
             foreach (var entity in builder.Model.GetEntityTypes())
             {
-                // Set table name to lowercase
                 entity.SetTableName(entity.GetTableName().ToLower());
 
-                // Optional: also set column names to lowercase
                 foreach (var property in entity.GetProperties())
                 {
                     property.SetColumnName(property.GetColumnName().ToLower());
                 }
 
-                // Optional: also lowercase keys/constraints (if needed)
                 foreach (var key in entity.GetKeys())
                 {
                     key.SetName(key.GetName().ToLower());

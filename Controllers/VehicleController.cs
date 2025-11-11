@@ -20,7 +20,7 @@ public class VehicleController : Controller
         {
             Vehicles = new SelectList(
                 _context.Vehicles
-                    .Where(v => v.AssignedDriver == null) // only available vehicles
+                    .Where(v => v.AssignedDriver == null) 
                     .OrderBy(v => v.RegistrationNumber)
                     .ToList(),
                 "VehicleId",
@@ -29,7 +29,7 @@ public class VehicleController : Controller
 
             Drivers = new SelectList(
                 _context.Drivers
-                    .Where(d => d.FullName == "Ruan Meyer") // only available drivers
+                    .Where(d => d.FullName == "Ruan Meyer") 
                     .OrderBy(d => d.FullName)
                     .ToList(),
                 "DriverId",

@@ -8,13 +8,12 @@ namespace LogiDriverPortal.Data
     {
         public static void Initialize(ApplicationDbContext context)
         {
-            // Check if already seeded
+           
             if (context.Drivers.Any())
             {
-                return; // Database has been seeded
+                return; 
             }
 
-            // Seed Drivers
             var drivers = new Driver[]
             {
                 new Driver
@@ -70,7 +69,6 @@ namespace LogiDriverPortal.Data
             context.Drivers.AddRange(drivers);
             context.SaveChanges();
 
-            // Seed Vehicles
             var vehicles = new Vehicle[]
             {
                 new Vehicle
@@ -134,7 +132,6 @@ namespace LogiDriverPortal.Data
            
             context.SaveChanges();
 
-            // Seed Panic Events
             var panicEvents = new PanicEvent[]
             {
                 new PanicEvent
@@ -156,7 +153,6 @@ namespace LogiDriverPortal.Data
             };
             context.PanicEvents.AddRange(panicEvents);
 
-            // Seed Deviation Alerts
             var deviations = new DeviationAlert[]
             {
                 new DeviationAlert

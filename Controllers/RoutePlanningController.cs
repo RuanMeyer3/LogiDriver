@@ -347,17 +347,15 @@ namespace LogiDriverPortal.Controllers
             catch (Exception ex)
             {
                 Debug.WriteLine($"✗ Error generating route code: {ex.Message}");
-                return "RT001"; // Fallback
+                return "RT001";
             }
         }
 
-        // Helper: Calculate estimated distance between two locations
         private decimal CalculateEstimatedDistance(string start, string end)
         {
             if (string.IsNullOrEmpty(start) || string.IsNullOrEmpty(end))
                 return 500;
 
-            // Dictionary of major South African city distances (in kilometers)
             var distances = new Dictionary<string, Dictionary<string, decimal>>
             {
                 ["Johannesburg"] = new Dictionary<string, decimal>
@@ -434,19 +432,16 @@ namespace LogiDriverPortal.Controllers
                 }
             };
 
-            // Check direct route
             if (distances.ContainsKey(start) && distances[start].ContainsKey(end))
             {
                 return distances[start][end];
             }
 
-            // Check reverse route
             if (distances.ContainsKey(end) && distances[end].ContainsKey(start))
             {
                 return distances[end][start];
             }
 
-            // Default estimate if route not found
             Debug.WriteLine($"⚠️ No distance data for {start} → {end}, using default 500km");
             return 500;
         }

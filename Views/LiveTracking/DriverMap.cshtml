@@ -132,9 +132,7 @@
             let isInitialLoad = true;
             let userInteracted = false;
 
-            // Initialize Google Map
             function initMap() {
-                // Center on South Africa (Johannesburg area)
                 const center = { lat: -26.2041, lng: 28.0473 };
 
                 map = new google.maps.Map(document.getElementById('map'), {
@@ -150,19 +148,15 @@
                     ]
                 });
 
-                // Track when user interacts with map
                 map.addListener('zoom_changed', () => { userInteracted = true; });
                 map.addListener('center_changed', () => { userInteracted = true; });
                 map.addListener('drag', () => { userInteracted = true; });
 
-                // Load initial driver locations
                 loadDriverLocations();
 
-                // Start auto-refresh
                 startAutoRefresh();
             }
 
-            // Load driver locations and add markers
             async function loadDriverLocations(preserveViewport = false) {
                 try {
                     const response = await fetch('/LiveTracking/GetDriverLocations');
@@ -170,14 +164,12 @@
 
                     const drivers = await response.json();
 
-                    // Update stats
                     document.getElementById('activeDriversCount').textContent = drivers.length;
                     let totalPoints = 0;
 
                     drivers.forEach(driver => {
                         totalPoints += driver.route.length;
 
-                        // Update existing marker or create new one
                         if (markers[driver.driverId]) {
                             updateDriverMarker(driver);
                         } else {
@@ -187,7 +179,6 @@
 
                     document.getElementById('totalLocationsCount').textContent = totalPoints;
 
-                    // Only fit bounds on initial load or if user hasn't interacted
                     if (isInitialLoad || (!userInteracted && !preserveViewport)) {
                         if (drivers.length > 0) {
                             const bounds = new google.maps.LatLngBounds();
@@ -207,7 +198,6 @@
                 }
             }
 
-            // Update existing marker position smoothly
             function updateDriverMarker(driver) {
                 const marker = markers[driver.driverId];
                 const polyline = polylines[driver.driverId];
@@ -218,10 +208,8 @@
                         lng: driver.latest.longitude
                     };
 
-                    // Smoothly animate marker to new position
                     marker.setPosition(newPosition);
 
-                    // Update marker icon color based on fatigue
                     const icon = {
                         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                         scale: 6,
@@ -233,7 +221,6 @@
                     };
                     marker.setIcon(icon);
 
-                    // Update info window content
                     const infoContent = `
                             <div class="map-info-window">
                                 <h4>${driver.driverName}</h4>
@@ -246,7 +233,6 @@
                         `;
                     infoWindows[driver.driverId].setContent(infoContent);
 
-                    // Update polyline route
                     if (polyline) {
                         const routePath = driver.route.map(point => ({
                             lat: point.latitude,
@@ -257,14 +243,12 @@
                 }
             }
 
-            // Add driver marker and route to map
             function addDriverToMap(driver) {
                 const position = {
                     lat: driver.latest.latitude,
                     lng: driver.latest.longitude
                 };
 
-                // Custom marker icon
                 const icon = {
                     path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                     scale: 6,
@@ -275,7 +259,6 @@
                     rotation: driver.latest.heading || 0
                 };
 
-                // Create marker
                 const marker = new google.maps.Marker({
                     position: position,
                     map: map,
@@ -284,7 +267,6 @@
                     animation: google.maps.Animation.DROP
                 });
 
-                // Info window content
                 const infoContent = `
                         <div class="map-info-window">
                             <h4>${driver.driverName}</h4>
@@ -301,12 +283,10 @@
                 });
 
                 marker.addListener('click', () => {
-                    // Close all other info windows
                     Object.values(infoWindows).forEach(iw => iw.close());
                     infoWindow.open(map, marker);
                 });
 
-                // Draw route polyline
                 const routePath = driver.route.map(point => ({
                     lat: point.latitude,
                     lng: point.longitude
@@ -326,11 +306,10 @@
                 infoWindows[driver.driverId] = infoWindow;
             }
 
-            // Get color based on fatigue level
             function getFatigueColor(fatigueLevel) {
-                if (fatigueLevel > 70) return '#ef4444'; // Red
-                if (fatigueLevel > 50) return '#f59e0b'; // Orange
-                return '#10b981'; // Green
+                if (fatigueLevel > 70) return '#ef4444'; /
+                if (fatigueLevel > 50) return '#f59e0b'; 
+                return '#10b981'; 
             }
 
             // Focus on specific driver
@@ -347,7 +326,6 @@
                 }
             }
 
-            // Toggle route visibility
             function toggleRoute(driverId) {
                 const polyline = polylines[driverId];
                 if (polyline) {
@@ -356,14 +334,12 @@
                 }
             }
 
-            // Refresh tracking data
             async function refreshTracking() {
                 const btn = document.querySelector('.btn-outline-primary');
                 const icon = btn.querySelector('i');
                 icon.classList.add('fa-spin');
 
                 try {
-                    // Preserve current viewport during auto-refresh
                     await loadDriverLocations(true);
                     await updateDriverCards();
                 } catch (error) {
@@ -373,7 +349,6 @@
                 }
             }
 
-            // Update driver cards without reloading page
             async function updateDriverCards() {
                 try {
                     const response = await fetch('/LiveTracking/GetDriverLocations');
@@ -382,11 +357,9 @@
                     drivers.forEach(driver => {
                         const card = document.querySelector(`[data-driver-id="${driver.driverId}"]`);
                         if (card) {
-                            // Update coordinates
                             card.querySelector('.location-coords').textContent =
                                 `${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}`;
 
-                            // Update timestamp
                             card.querySelector('.timestamp').textContent =
                                 new Date(driver.latest.timestamp).toLocaleTimeString();
                         }
@@ -396,7 +369,6 @@
                 }
             }
 
-            // Simulate driver movement (for testing)
             async function simulateMovement() {
                 try {
                     const response = await fetch('/LiveTracking/SimulateMovement', {
@@ -415,14 +387,12 @@
                 }
             }
 
-            // Auto-refresh every 10 seconds
             function startAutoRefresh() {
                 refreshInterval = setInterval(() => {
                     refreshTracking();
                 }, 10000);
             }
 
-            // Cleanup on page unload
             window.addEventListener('beforeunload', () => {
                 clearInterval(refreshInterval);
             });

@@ -33,7 +33,6 @@ namespace LogiDriverPortal.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // --- NEW IDENTITY FIELDS (Not Mapped to the 'Drivers' DB table) ---
 
         [NotMapped]
         [Required(ErrorMessage = "Email is required for login.")]

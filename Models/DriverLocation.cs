@@ -18,10 +18,8 @@ namespace LogiDriverPortal.Models
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        // Optional: Speed in km/h
         public double? Speed { get; set; }
 
-        // Optional: Heading/Direction (0-360 degrees)
         public double? Heading { get; set; }
     }
 }

@@ -19,14 +19,12 @@ namespace LogiDriverPortal.Controllers
             _context = context;
         }
 
-        // GET: /LiveTracking/Index
         public async Task<IActionResult> DriverMap()
         {
             var driverData = await GetDriverLocationsData();
             return View(driverData);
         }
 
-        // API: /LiveTracking/GetDriverLocations
         [HttpGet]
         public async Task<IActionResult> GetDriverLocations()
         {
@@ -36,7 +34,6 @@ namespace LogiDriverPortal.Controllers
 
         private async Task<List<DriverMapViewModel>> GetDriverLocationsData()
         {
-            // Get all drivers with their latest locations
             var driversWithLocations = await _context.Drivers
                 .Where(d => d.Status == "Active")
                 .Select(d => new
@@ -45,7 +42,7 @@ namespace LogiDriverPortal.Controllers
                     Locations = _context.DriverLocations
                         .Where(dl => dl.DriverId == d.DriverId)
                         .OrderByDescending(dl => dl.Timestamp)
-                        .Take(50) // Last 50 points
+                        .Take(50) 
                         .ToList()
                 })
                 .Where(x => x.Locations.Any())
@@ -66,7 +63,6 @@ namespace LogiDriverPortal.Controllers
             return result;
         }
 
-        // API: Get single driver location
         [HttpGet]
         public async Task<IActionResult> GetDriverLocation(int driverId)
         {
@@ -91,7 +87,6 @@ namespace LogiDriverPortal.Controllers
             });
         }
 
-        // For testing: Simulate driver movement
         [HttpPost]
         public async Task<IActionResult> SimulateMovement()
         {
@@ -111,7 +106,6 @@ namespace LogiDriverPortal.Controllers
                 double lat = lastLocation?.Latitude ?? (-26.7 + random.NextDouble() * 0.5);
                 double lng = lastLocation?.Longitude ?? (27.0 + random.NextDouble() * 0.5);
 
-                // Small random movement
                 lat += (random.NextDouble() - 0.5) * 0.001;
                 lng += (random.NextDouble() - 0.5) * 0.001;
 
