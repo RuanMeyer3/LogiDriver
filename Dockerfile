@@ -1,26 +1,28 @@
-# Use official ASP.NET runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
-WORKDIR /app
-EXPOSE 80
-
-# Use SDK image to build the app
+# -----------------------------
+# Stage 1: Build
+# -----------------------------
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies
-COPY ["LogiDriverPortal.csproj", "./"]
-RUN dotnet restore "./YourProject.csproj"
+# Copy csproj and restore as distinct layers
+COPY *.csproj ./
+RUN dotnet restore
 
-# Copy the rest of the source code
-COPY . .
+# Copy the rest of the project and build
+COPY . ./
+RUN dotnet publish -c Release -o /app/publish
 
-# Build the app in Release mode
-RUN dotnet publish "LogiDriverPortal.csproj" -c Release -o /app/publish
-
-# Final image
-FROM base AS final
+# -----------------------------
+# Stage 2: Runtime
+# -----------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+
+# Copy published app from build stage
+COPY --from=build /app/publish .
+
+# Expose port
+EXPOSE 5000
 
 # Entry point
 ENTRYPOINT ["dotnet", "LogiDriverPortal.dll"]
