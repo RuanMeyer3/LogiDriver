@@ -16,12 +16,12 @@ namespace LogiDriverPortal.Data
         public DbSet<RoutePlan> RoutePlans { get; set; }
         public DbSet<DeviationAlert> DeviationAlerts { get; set; }
         public DbSet<PanicEvent> PanicEvents { get; set; }
+        public DbSet<DriverLocation> DriverLocations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // Configure relationships
             builder.Entity<RoutePlan>()
                 .HasOne(r => r.Driver)
                 .WithMany()
@@ -33,6 +33,29 @@ namespace LogiDriverPortal.Data
                 .WithMany()
                 .HasForeignKey(r => r.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            foreach (var entity in builder.Model.GetEntityTypes())
+            {
+                entity.SetTableName(entity.GetTableName().ToLower());
+
+                foreach (var property in entity.GetProperties())
+                {
+                    property.SetColumnName(property.GetColumnName().ToLower());
+                }
+
+                foreach (var key in entity.GetKeys())
+                {
+                    key.SetName(key.GetName().ToLower());
+                }
+                foreach (var key in entity.GetForeignKeys())
+                {
+                    key.SetConstraintName(key.GetConstraintName().ToLower());
+                }
+                foreach (var index in entity.GetIndexes())
+                {
+                    index.SetDatabaseName(index.GetDatabaseName().ToLower());
+                }
+            }
         }
     }
 }

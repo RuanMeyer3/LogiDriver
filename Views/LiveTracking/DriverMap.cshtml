@@ -1,0 +1,400 @@
+﻿@model IEnumerable<LogiDriverPortal.Models.ViewModels.DriverMapViewModel>
+    @{
+    ViewData["Title"] = "Live Vehicle Tracking";
+    }
+
+    <div class="live-tracking">
+        <div class="page-header">
+            <h2 class="page-title-main">Live Vehicle Tracking</h2>
+            <div>
+                <button class="btn btn-outline-primary" onclick="refreshTracking()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+                <button class="btn btn-outline-secondary" onclick="simulateMovement()">
+                    <i class="fas fa-play"></i> Simulate Movement
+                </button>
+            </div>
+        </div>
+
+        <!-- Google Maps Container -->
+        <div class="map-container">
+            <div id="map" style="width: 100%; height: 500px; border-radius: 12px;"></div>
+            <div class="map-stats">
+                <span class="stat-item">
+                    <i class="fas fa-users"></i>
+                    <strong id="activeDriversCount">@Model.Count()</strong> Active Drivers
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <strong id="totalLocationsCount">@Model.Sum(d => d.Route.Count)</strong> Location Points
+                </span>
+            </div>
+        </div>
+
+        <!-- Active Drivers List -->
+        <div class="tracking-grid" id="trackingGrid">
+            @foreach (var driver in Model)
+        {
+            <div class="tracking-card" data-driver-id="@driver.DriverId">
+                <div class="tracking-card-header">
+                    <div class="vehicle-status">
+                        <div class="status-indicator status-active"></div>
+                        <strong>@driver.DriverName</strong>
+                    </div>
+                    <span class="badge badge-success">
+                        <i class="fas fa-broadcast-tower"></i> Live
+                    </span>
+                </div>
+
+                <div class="tracking-card-body">
+                    <div class="tracking-info">
+                        <div class="info-row">
+                            <i class="fas fa-id-card"></i>
+                            <span>@driver.DriverCode</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-truck"></i>
+                            <span>@driver.VehicleRegistration</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="location-coords">
+                                @driver.Latest.Latitude.ToString("F6"), @driver.Latest.Longitude.ToString("F6")
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-clock"></i>
+                            <span class="timestamp">
+                                @driver.Latest.Timestamp.ToString("HH:mm:ss")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="tracking-stats">
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-orange">
+                                <i class="fas fa-battery-half"></i>
+                            </div>
+                            <div>
+                                <small>Fatigue</small>
+                                <strong class="@(driver.FatigueLevel > 70 ? "text-danger" : "")">
+                                    @driver.FatigueLevel%
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon stat-icon-blue">
+                                <i class="fas fa-route"></i>
+                            </div>
+                            <div>
+                                <small>Route Points</small>
+                                <strong>@driver.Route.Count</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-card-actions">
+                    <button class="btn btn-sm btn-primary" onclick="focusOnDriver(@driver.DriverId)">
+                        <i class="fas fa-crosshairs"></i> Locate on Map
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleRoute(@driver.DriverId)">
+                        <i class="fas fa-route"></i> Toggle Route
+                    </button>
+                </div>
+            </div>
+        }
+        </div>
+
+        @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-map-marker-alt"></i>
+            <h3>No Active Drivers</h3>
+            <p>No vehicles are currently being tracked</p>
+            <a asp-controller="RoutePlanning" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-route"></i> View All Routes
+            </a>
+        </div>
+    }
+    </div>
+
+    @section Scripts {
+        <!-- Google Maps API -->
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYoQRHsI3wj42WIKTyJH68OvoQAzWEa9w&callback=initMap" async defer></script>
+
+        <script>
+            let map;
+            let markers = {};
+            let polylines = {};
+            let infoWindows = {};
+            let refreshInterval;
+            let isInitialLoad = true;
+            let userInteracted = false;
+
+            function initMap() {
+                const center = { lat: -26.2041, lng: 28.0473 };
+
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 12,
+                    center: center,
+                    mapTypeId: 'roadmap',
+                    styles: [
+                        {
+                            featureType: 'poi',
+                            elementType: 'labels',
+                            stylers: [{ visibility: 'off' }]
+                        }
+                    ]
+                });
+
+                map.addListener('zoom_changed', () => { userInteracted = true; });
+                map.addListener('center_changed', () => { userInteracted = true; });
+                map.addListener('drag', () => { userInteracted = true; });
+
+                loadDriverLocations();
+
+                startAutoRefresh();
+            }
+
+            async function loadDriverLocations(preserveViewport = false) {
+                try {
+                    const response = await fetch('/LiveTracking/GetDriverLocations');
+                    if (!response.ok) throw new Error('Failed to fetch locations');
+
+                    const drivers = await response.json();
+
+                    document.getElementById('activeDriversCount').textContent = drivers.length;
+                    let totalPoints = 0;
+
+                    drivers.forEach(driver => {
+                        totalPoints += driver.route.length;
+
+                        if (markers[driver.driverId]) {
+                            updateDriverMarker(driver);
+                        } else {
+                            addDriverToMap(driver);
+                        }
+                    });
+
+                    document.getElementById('totalLocationsCount').textContent = totalPoints;
+
+                    if (isInitialLoad || (!userInteracted && !preserveViewport)) {
+                        if (drivers.length > 0) {
+                            const bounds = new google.maps.LatLngBounds();
+                            drivers.forEach(driver => {
+                                bounds.extend({
+                                    lat: driver.latest.latitude,
+                                    lng: driver.latest.longitude
+                                });
+                            });
+                            map.fitBounds(bounds);
+                        }
+                        isInitialLoad = false;
+                    }
+
+                } catch (error) {
+                    console.error('Error loading driver locations:', error);
+                }
+            }
+
+            function updateDriverMarker(driver) {
+                const marker = markers[driver.driverId];
+                const polyline = polylines[driver.driverId];
+
+                if (marker) {
+                    const newPosition = {
+                        lat: driver.latest.latitude,
+                        lng: driver.latest.longitude
+                    };
+
+                    marker.setPosition(newPosition);
+
+                    const icon = {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                        scale: 6,
+                        fillColor: getFatigueColor(driver.fatigueLevel),
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                        rotation: driver.latest.heading || 0
+                    };
+                    marker.setIcon(icon);
+
+                    const infoContent = `
+                            <div class="map-info-window">
+                                <h4>${driver.driverName}</h4>
+                                <p><strong>Code:</strong> ${driver.driverCode}</p>
+                                <p><strong>Vehicle:</strong> ${driver.vehicleRegistration}</p>
+                                <p><strong>Fatigue:</strong> ${driver.fatigueLevel}%</p>
+                                <p><strong>Location:</strong> ${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}</p>
+                                <p><strong>Updated:</strong> ${new Date(driver.latest.timestamp).toLocaleTimeString()}</p>
+                            </div>
+                        `;
+                    infoWindows[driver.driverId].setContent(infoContent);
+
+                    if (polyline) {
+                        const routePath = driver.route.map(point => ({
+                            lat: point.latitude,
+                            lng: point.longitude
+                        }));
+                        polyline.setPath(routePath);
+                    }
+                }
+            }
+
+            function addDriverToMap(driver) {
+                const position = {
+                    lat: driver.latest.latitude,
+                    lng: driver.latest.longitude
+                };
+
+                const icon = {
+                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                    scale: 6,
+                    fillColor: getFatigueColor(driver.fatigueLevel),
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 2,
+                    rotation: driver.latest.heading || 0
+                };
+
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    icon: icon,
+                    title: driver.driverName,
+                    animation: google.maps.Animation.DROP
+                });
+
+                const infoContent = `
+                        <div class="map-info-window">
+                            <h4>${driver.driverName}</h4>
+                            <p><strong>Code:</strong> ${driver.driverCode}</p>
+                            <p><strong>Vehicle:</strong> ${driver.vehicleRegistration}</p>
+                            <p><strong>Fatigue:</strong> ${driver.fatigueLevel}%</p>
+                            <p><strong>Location:</strong> ${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}</p>
+                            <p><strong>Updated:</strong> ${new Date(driver.latest.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                    `;
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: infoContent
+                });
+
+                marker.addListener('click', () => {
+                    Object.values(infoWindows).forEach(iw => iw.close());
+                    infoWindow.open(map, marker);
+                });
+
+                const routePath = driver.route.map(point => ({
+                    lat: point.latitude,
+                    lng: point.longitude
+                }));
+
+                const polyline = new google.maps.Polyline({
+                    path: routePath,
+                    geodesic: true,
+                    strokeColor: getFatigueColor(driver.fatigueLevel),
+                    strokeOpacity: 0.7,
+                    strokeWeight: 3,
+                    map: map
+                });
+
+                markers[driver.driverId] = marker;
+                polylines[driver.driverId] = polyline;
+                infoWindows[driver.driverId] = infoWindow;
+            }
+
+            function getFatigueColor(fatigueLevel) {
+                if (fatigueLevel > 70) return '#ef4444'; 
+                if (fatigueLevel > 50) return '#f59e0b'; 
+                return '#10b981'; 
+            }
+
+            // Focus on specific driver
+            function focusOnDriver(driverId) {
+                const marker = markers[driverId];
+                if (marker) {
+                    map.setCenter(marker.getPosition());
+                    map.setZoom(15);
+                    infoWindows[driverId].open(map, marker);
+
+                    // Bounce animation
+                    marker.setAnimation(google.maps.Animation.BOUNCE);
+                    setTimeout(() => marker.setAnimation(null), 2000);
+                }
+            }
+
+            function toggleRoute(driverId) {
+                const polyline = polylines[driverId];
+                if (polyline) {
+                    const visible = polyline.getMap() !== null;
+                    polyline.setMap(visible ? null : map);
+                }
+            }
+
+            async function refreshTracking() {
+                const btn = document.querySelector('.btn-outline-primary');
+                const icon = btn.querySelector('i');
+                icon.classList.add('fa-spin');
+
+                try {
+                    await loadDriverLocations(true);
+                    await updateDriverCards();
+                } catch (error) {
+                    console.error('Error refreshing:', error);
+                } finally {
+                    icon.classList.remove('fa-spin');
+                }
+            }
+
+            async function updateDriverCards() {
+                try {
+                    const response = await fetch('/LiveTracking/GetDriverLocations');
+                    const drivers = await response.json();
+
+                    drivers.forEach(driver => {
+                        const card = document.querySelector(`[data-driver-id="${driver.driverId}"]`);
+                        if (card) {
+                            card.querySelector('.location-coords').textContent =
+                                `${driver.latest.latitude.toFixed(6)}, ${driver.latest.longitude.toFixed(6)}`;
+
+                            card.querySelector('.timestamp').textContent =
+                                new Date(driver.latest.timestamp).toLocaleTimeString();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error updating cards:', error);
+                }
+            }
+
+            async function simulateMovement() {
+                try {
+                    const response = await fetch('/LiveTracking/SimulateMovement', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        await refreshTracking();
+                        console.log('Movement simulated successfully');
+                    }
+                } catch (error) {
+                    console.error('Error simulating movement:', error);
+                }
+            }
+
+            function startAutoRefresh() {
+                refreshInterval = setInterval(() => {
+                    refreshTracking();
+                }, 10000);
+            }
+
+            window.addEventListener('beforeunload', () => {
+                clearInterval(refreshInterval);
+            });
+        </script>
+    }

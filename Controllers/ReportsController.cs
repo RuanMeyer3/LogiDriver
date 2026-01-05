@@ -55,15 +55,13 @@ namespace LogiDriverPortal.Controllers
 
         public IActionResult ExportPdf()
         {
-            // In a real application, you would use a PDF generation library (e.g., iTextSharp, QuestPDF)
-            // to create a professional PDF report from your data.
-            // For now, this is a mock implementation that returns a plain text file.
+            
 
             var content = "Mock PDF Report\n\nThis is a placeholder for a PDF report. " +
                           "Please integrate a PDF generation library for actual PDF export functionality.";
 
             var fileName = "report.pdf";
-            var contentType = "application/pdf"; // Correct content type for PDF
+            var contentType = "application/pdf"; 
 
             return File(Encoding.UTF8.GetBytes(content), contentType, fileName);
         }

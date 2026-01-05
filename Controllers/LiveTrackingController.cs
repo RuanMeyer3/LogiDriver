@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LogiDriverPortal.Data;
+using LogiDriverPortal.Models;
+using LogiDriverPortal.Models.ViewModels;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,101 +19,111 @@ namespace LogiDriverPortal.Controllers
             _context = context;
         }
 
-        // GET: /LiveTracking/Index
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> DriverMap()
         {
-            var activeRoutes = await _context.RoutePlans
-                .Include(r => r.Driver)
-                .Include(r => r.Vehicle)
-                .Where(r => r.Status == "Active")
-                .OrderBy(r => r.RouteCode)
-                .ToListAsync();
-
-            return View(activeRoutes);
+            var driverData = await GetDriverLocationsData();
+            return View(driverData);
         }
 
-        // GET: /LiveTracking/Details/5
-        public async Task<IActionResult> Details(int id)
-        {
-            var route = await _context.RoutePlans
-                .Include(r => r.Driver)
-                .Include(r => r.Vehicle)
-                .FirstOrDefaultAsync(r => r.RoutePlanId == id);
-
-            if (route == null)
-            {
-                return NotFound();
-            }
-
-            // Get related alerts
-            ViewBag.PanicEvents = await _context.PanicEvents
-                .Where(p => p.RoutePlanId == id)
-                .OrderByDescending(p => p.OccurredAt)
-                .Take(5)
-                .ToListAsync();
-
-            ViewBag.DeviationAlerts = await _context.DeviationAlerts
-                .Where(d => d.RoutePlanId == id)
-                .OrderByDescending(d => d.DetectedAt)
-                .Take(5)
-                .ToListAsync();
-
-            return View(route);
-        }
-
-        // API endpoint for real-time updates
-        // GET: /LiveTracking/GetRouteStatus/5
         [HttpGet]
-        public async Task<IActionResult> GetRouteStatus(int id)
+        public async Task<IActionResult> GetDriverLocations()
         {
-            var route = await _context.RoutePlans
-                .Include(r => r.Driver)
-                .Include(r => r.Vehicle)
-                .FirstOrDefaultAsync(r => r.RoutePlanId == id);
+            var driverData = await GetDriverLocationsData();
+            return Json(driverData);
+        }
 
-            if (route == null)
+        private async Task<List<DriverMapViewModel>> GetDriverLocationsData()
+        {
+            var driversWithLocations = await _context.Drivers
+                .Where(d => d.Status == "Active")
+                .Select(d => new
+                {
+                    Driver = d,
+                    Locations = _context.DriverLocations
+                        .Where(dl => dl.DriverId == d.DriverId)
+                        .OrderByDescending(dl => dl.Timestamp)
+                        .Take(50) 
+                        .ToList()
+                })
+                .Where(x => x.Locations.Any())
+                .ToListAsync();
+
+            var result = driversWithLocations.Select(d => new DriverMapViewModel
+            {
+                DriverId = d.Driver.DriverId,
+                DriverName = d.Driver.FullName,
+                DriverCode = d.Driver.DriverCode,
+                VehicleRegistration = d.Driver.AssignedVehicle ?? "N/A",
+                Latest = d.Locations.First(),
+                Route = d.Locations.OrderBy(l => l.Timestamp).ToList(),
+                FatigueLevel = d.Driver.FatigueLevel,
+                Status = d.Driver.Status
+            }).ToList();
+
+            return result;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDriverLocation(int driverId)
+        {
+            var latest = await _context.DriverLocations
+                .Where(dl => dl.DriverId == driverId)
+                .OrderByDescending(dl => dl.Timestamp)
+                .FirstOrDefaultAsync();
+
+            if (latest == null)
             {
                 return NotFound();
             }
 
             return Json(new
             {
-                routeCode = route.RouteCode,
-                progress = route.Progress,
-                status = route.Status,
-                driverName = route.Driver.FullName,
-                fatigueLevel = route.Driver.FatigueLevel,
-                vehicleReg = route.Vehicle.RegistrationNumber,
-                eta = route.EstimatedArrival?.ToString("HH:mm"),
-                currentLocation = route.Driver.CurrentLocation ?? "Unknown"
+                driverId = latest.DriverId,
+                latitude = latest.Latitude,
+                longitude = latest.Longitude,
+                timestamp = latest.Timestamp,
+                speed = latest.Speed,
+                heading = latest.Heading
             });
         }
 
-        // GET: /LiveTracking/GetAllRouteStatuses
-        [HttpGet]
-        public async Task<IActionResult> GetAllRouteStatuses()
+        [HttpPost]
+        public async Task<IActionResult> SimulateMovement()
         {
-            var activeRoutes = await _context.RoutePlans
-                .Include(r => r.Driver)
-                .Include(r => r.Vehicle)
-                .Where(r => r.Status == "Active")
-                .OrderBy(r => r.RouteCode)
-                .Select(r => new
-                {
-                    routePlanId = r.RoutePlanId,
-                    routeCode = r.RouteCode,
-                    progress = r.Progress,
-                    status = r.Status,
-                    driverName = r.Driver.FullName,
-                    fatigueLevel = r.Driver.FatigueLevel,
-                    vehicleReg = r.Vehicle.RegistrationNumber,
-                    eta = r.EstimatedArrival.HasValue ? r.EstimatedArrival.Value.ToString("HH:mm") : null,
-                    currentLocation = r.Driver.CurrentLocation ?? "Unknown",
-                    routeDescription = r.RouteDescription
-                })
+            var random = new Random();
+            var drivers = await _context.Drivers
+                .Where(d => d.Status == "Active")
+                .Take(5)
                 .ToListAsync();
 
-            return Json(activeRoutes);
+            foreach (var driver in drivers)
+            {
+                var lastLocation = await _context.DriverLocations
+                    .Where(dl => dl.DriverId == driver.DriverId)
+                    .OrderByDescending(dl => dl.Timestamp)
+                    .FirstOrDefaultAsync();
+
+                double lat = lastLocation?.Latitude ?? (-26.7 + random.NextDouble() * 0.5);
+                double lng = lastLocation?.Longitude ?? (27.0 + random.NextDouble() * 0.5);
+
+                lat += (random.NextDouble() - 0.5) * 0.001;
+                lng += (random.NextDouble() - 0.5) * 0.001;
+
+                var newLocation = new DriverLocation
+                {
+                    DriverId = driver.DriverId,
+                    Latitude = lat,
+                    Longitude = lng,
+                    Timestamp = DateTime.UtcNow,
+                    Speed = random.Next(60, 120),
+                    Heading = random.Next(0, 360)
+                };
+
+                _context.DriverLocations.Add(newLocation);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Locations updated" });
         }
     }
 }

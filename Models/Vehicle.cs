@@ -22,7 +22,7 @@ namespace LogiDriverPortal.Models
         public string? AssignedDriver { get; set; }
 
         [Required]
-        public string Status { get; set; } = "Available"; // In-Transit, Available, Maintenance
+        public string Status { get; set; } = "Available";
 
         public DateTime? LastService { get; set; }
 

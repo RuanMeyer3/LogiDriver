@@ -15,11 +15,11 @@ namespace LogiDriverPortal.Models
         public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public string Severity { get; set; } = "critical"; // critical, high, medium
+        public string Severity { get; set; } = "critical"; 
 
         public string Location { get; set; }
 
-        public string Status { get; set; } = "active"; // active, responded, resolved
+        public string Status { get; set; } = "active"; 
 
         public DateTime? ResponseTime { get; set; }
     }

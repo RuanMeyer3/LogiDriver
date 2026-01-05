@@ -35,8 +35,8 @@
                         <span>Route Planning</span>
                     </a>
                 </li>
-                <li class="menu-item" @(ViewContext.RouteData.Values["Action"]?.ToString() == "RoutePlanning" ? "active" : "")">
-                    <a asp-controller="LiveTracking" asp-action="Index">
+                <li class="menu-item" @(ViewContext.RouteData.Values["Action"]?.ToString() == "LiveTracking" ? "active" : "")">
+                    <a asp-controller="LiveTracking" asp-action="DriverMap">
                         <i class="fas fa-map-marker-alt"></i>
                         <span>Live Tracking</span>
                     </a>
